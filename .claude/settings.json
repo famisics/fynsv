@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./claude-remote/bin/remote-capture:*)",
+      "Bash(./claude-remote/bin/remote-open:*)",
+      "Bash(./claude-remote/bin/remote-send:*)"
+    ]
+  }
+}

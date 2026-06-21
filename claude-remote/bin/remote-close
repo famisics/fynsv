@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Close a remote session.
+#
+#   remote-close <target>
+#   remote-close --force <target>
+
+set -euo pipefail
+
+_BIN_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+# shellcheck source=lib/common.sh
+source "$_BIN_DIR/lib/common.sh"
+# shellcheck source=lib/parse-target.sh
+source "$_BIN_DIR/lib/parse-target.sh"
+
+force=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --force|-f) force=1; shift ;;
+    --) shift; break ;;
+    -*) die "unknown flag: $1" ;;
+    *)  break ;;
+  esac
+done
+
+remote_bootstrap "${1-}"
+
+if ! session_exists "$TARGET_SESSION"; then
+  log_info "session not running: $TARGET_SESSION"
+  exit 0
+fi
+
+if (( ! force )); then
+  case "$TARGET_KIND" in
+    ssh)
+      # リモートシェルを正常終了させてから ssh も exit させる
+      tmux send-keys -t "$TARGET_SESSION" 'exit' Enter 2>/dev/null || true
+      sleep 1
+      ;;
+    serial)
+      # tio の終了シーケンス
+      tmux send-keys -t "$TARGET_SESSION" C-t q 2>/dev/null || true
+      sleep 1
+      ;;
+  esac
+fi
+
+if session_exists "$TARGET_SESSION"; then
+  tmux kill-session -t "$TARGET_SESSION"
+fi
+
+log_ok "closed: $TARGET_SESSION"

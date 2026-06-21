@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Print the tmux attach command for a target.
+
+set -euo pipefail
+
+_BIN_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+# shellcheck source=lib/common.sh
+source "$_BIN_DIR/lib/common.sh"
+# shellcheck source=lib/parse-target.sh
+source "$_BIN_DIR/lib/parse-target.sh"
+
+remote_bootstrap "${1-}"
+
+if session_exists "$TARGET_SESSION"; then
+  printf 'tmux attach -t %s\n' "$TARGET_SESSION"
+else
+  log_warn "session not running: $TARGET_SESSION"
+  printf 'start it first: %s/remote-open %s\n' "$_BIN_DIR" "$1"
+  exit 1
+fi

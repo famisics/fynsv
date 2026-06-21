@@ -1,0 +1,24 @@
+# Terraform state (機密を含む — 絶対にコミットしない)
+*.tfstate
+*.tfstate.*
+
+# tfvars (API トークン等の実値)。.example のみコミットする
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# provider バイナリ・作業ディレクトリ
+.terraform/
+.terraform.tfstate.lock.info
+
+# -generate-config-out で生成される一時ファイル (整形して .tf へ移したら削除)
+generated.tf
+
+# crash ログ・override
+crash*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# .terraform.lock.hcl は provider バージョン固定の再現性のためコミットする (ignore しない)

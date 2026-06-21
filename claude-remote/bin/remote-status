@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# List active claude-remote-* tmux sessions.
+
+set -euo pipefail
+
+_BIN_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+# shellcheck source=lib/common.sh
+source "$_BIN_DIR/lib/common.sh"
+
+require_cmd tmux
+
+filter="#{m:${SESSION_PREFIX}-*,#{session_name}}"
+format='#{session_name}	#{session_windows}w	#{?session_attached,attached,—}	#{session_created_string}'
+
+# tmux サーバが起動していない / 該当セッションがゼロ のときは list-sessions が exit 1
+output="$(tmux list-sessions -f "$filter" -F "$format" 2>/dev/null || true)"
+
+if [[ -z "$output" ]]; then
+  printf 'no active %s-* sessions\n' "$SESSION_PREFIX"
+  exit 0
+fi
+
+while IFS=$'\t' read -r name wins attached created; do
+  printf '%-44s %-6s %-12s %s\n' "$name" "$wins" "$attached" "$created"
+done <<<"$output"
+
+cat <<'EOF'
+
+attach to one with:
+  tmux attach -t <session>
+EOF

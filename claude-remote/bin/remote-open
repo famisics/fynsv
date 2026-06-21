@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Open a tmux session for a remote target. Idempotent.
+
+set -euo pipefail
+
+_BIN_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+# shellcheck source=lib/common.sh
+source "$_BIN_DIR/lib/common.sh"
+# shellcheck source=lib/parse-target.sh
+source "$_BIN_DIR/lib/parse-target.sh"
+
+remote_bootstrap "${1-}"
+
+if session_exists "$TARGET_SESSION"; then
+  log_ok "session already running: $TARGET_SESSION"
+  printf 'attach with: tmux attach -t %s\n' "$TARGET_SESSION"
+  exit 0
+fi
+
+mkdir -p "$CACHE_DIR"
+log_file="$CACHE_DIR/${TARGET_SESSION}.log"
+
+case "$TARGET_KIND" in
+  ssh)
+    require_cmd ssh
+    # ssh -G は未定義ホストでもデフォルト設定を返して成功するため、解決後の hostname が
+    # 入力と等しければ Host ブロック未マッチと判定。`Host *` で hostname を書き換える設定だと
+    # 誤検出する可能性があるが、本リポジトリの ~/.ssh/config では十分機能する。
+    resolved_host="$(ssh -G "$TARGET_SSH_HOST" 2>/dev/null | awk '/^hostname / {print $2; exit}')"
+    if [[ -z "$resolved_host" || "$resolved_host" == "$TARGET_SSH_HOST" ]]; then
+      log_warn "no explicit Host block matched for '$TARGET_SSH_HOST' in ~/.ssh/config (will rely on DNS)"
+    fi
+    log_info "starting ssh session: $TARGET_SSH_HOST → $TARGET_SESSION"
+    # tmux に渡すリモート TERM は xterm-256color に上書き (tmux-256color が漏れると less/vim が壊れる)
+    tmux new-session -d -s "$TARGET_SESSION" \
+      env TERM=xterm-256color ssh "$TARGET_SSH_HOST"
+    # tio の --log に相当するものが ssh には無いので tmux 側で記録 (pipe-pane アタッチ前の数行は欠ける)
+    tmux pipe-pane -t "$TARGET_SESSION" -o "cat >> '$log_file'" 2>/dev/null \
+      || log_warn "failed to enable pipe-pane logging for $TARGET_SESSION"
+    ;;
+  serial)
+    require_cmd tio
+    [[ -e "$TARGET_SERIAL_DEVICE" ]] || die "serial device not found: $TARGET_SERIAL_DEVICE"
+    log_info "starting serial session: $TARGET_SERIAL_DEVICE @${TARGET_SERIAL_BAUD} → $TARGET_SESSION"
+    tmux new-session -d -s "$TARGET_SESSION" \
+      tio --baudrate "$TARGET_SERIAL_BAUD" --databits 8 --parity none --stopbits 1 \
+          --flow none --log --log-file "$log_file" "$TARGET_SERIAL_DEVICE"
+    ;;
+  *)
+    die "unsupported kind: $TARGET_KIND"
+    ;;
+esac
+
+# 死亡を素早く検出しつつ、初期出力がバッファに溜まる時間も確保。最長 2s で抜ける。
+for _ in $(seq 1 10); do
+  sleep 0.2
+  session_exists "$TARGET_SESSION" || break
+done
+
+if ! session_exists "$TARGET_SESSION"; then
+  log_error "session died immediately after launch: $TARGET_SESSION"
+  if [[ -f "$log_file" ]]; then
+    log_error "last lines of $log_file:"
+    tail -n 20 "$log_file" >&2 || true
+  fi
+  exit 1
+fi
+
+log_info "initial output:"
+tmux capture-pane -t "$TARGET_SESSION" -p -S -50 || true
+
+cat <<EOF
+
+session : $TARGET_SESSION
+log     : $log_file
+attach  : tmux attach -t $TARGET_SESSION
+send    : $_BIN_DIR/remote-send ${1} '<text>'
+capture : $_BIN_DIR/remote-capture ${1}
+close   : $_BIN_DIR/remote-close ${1}
+EOF

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Send text or keys to a remote session.
+#
+#   remote-send <target> '<text>'             # text + Enter
+#   remote-send --no-enter <target> '<text>'  # no trailing newline (? completion 等)
+#   remote-send --raw <target> <tmux-keys...> # raw send-keys (C-c, C-u, Escape, ...)
+
+set -euo pipefail
+
+_BIN_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+# shellcheck source=lib/common.sh
+source "$_BIN_DIR/lib/common.sh"
+# shellcheck source=lib/parse-target.sh
+source "$_BIN_DIR/lib/parse-target.sh"
+
+mode="text"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --no-enter) mode="no-enter"; shift ;;
+    --raw)      mode="raw";      shift ;;
+    --)         shift; break ;;
+    -*)         die "unknown flag: $1" ;;
+    *)          break ;;
+  esac
+done
+
+remote_bootstrap "${1-}"
+shift || die "missing text to send"
+session_exists "$TARGET_SESSION" || die "session not found: $TARGET_SESSION (run remote-open first)"
+
+[[ $# -ge 1 ]] || die "missing text/keys to send"
+
+case "$mode" in
+  text)     tmux send-keys -t "$TARGET_SESSION" -- "$*" Enter ;;
+  no-enter) tmux send-keys -t "$TARGET_SESSION" -- "$*" ;;
+  raw)      tmux send-keys -t "$TARGET_SESSION" "$@" ;;
+esac

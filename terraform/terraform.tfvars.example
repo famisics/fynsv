@@ -1,0 +1,11 @@
+# このファイルを terraform.tfvars にコピーして実値を記入する。
+# terraform.tfvars は .gitignore 済み (コミットされない)。
+
+pve_endpoint  = "https://192.168.2.11:8006/"
+pve_api_token = "terraform@pve!provider=00000000-0000-0000-0000-000000000000"
+# pve_insecure = true
+
+# Phase 2: クラスタのユーザー/トークン/ACL を宣言管理する場合に true
+# manage_cluster_users = false
+
+# ゲスト (VM / LXC) の宣言は tfvars ではなく vms.tf / containers.tf の locals に書いてコミットする。
