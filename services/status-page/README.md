@@ -1,0 +1,160 @@
+# Status Page 構成
+
+[README](../../cluster/README.md) で説明したクラスタ FYNSV 上のサービス稼働状況とリソース使用量を収集・公開するステータスページ。
+
+## 構成
+
+```
+health-checker  →  Turso (libSQL)  →  web
+  (Bun 常駐)        (エッジ DB)       (Next.js / Vercel)
+```
+
+- **health-checker**: クラスタ内で常駐し、各サービスへのヘルスチェックと Proxmox API からのリソース取得を行い、結果を Turso に書き込む。
+- **Turso**: チェック結果 (`service_checks`) とリソーススナップショット (`resource_snapshots`) を保持する libSQL データベース。
+- **web**: Turso を読み取り、稼働状況・レイテンシ・リソース推移を表示する Next.js アプリ。Vercel にデプロイする。
+
+監視対象サービスの一覧 (ID / 名前 / カテゴリ / チェック方法 / 対応する Proxmox ゲスト) は [`health-checker/src/config.ts`](./health-checker/src/config.ts) が正となる。
+
+## health-checker
+
+クラスタ内の任意のノードで Docker Compose により常駐させる。
+
+- 60 秒間隔で全有効サービスをチェックし、結果とリソーススナップショットを Turso に書き込む
+- チェック方式は HTTP / TCP / ping の 3 種類。各サービスの方式は `config.ts` で定義
+- リソース統計 (CPU / メモリ / ディスク / ネットワーク) は Proxmox API (`status/current`) から取得
+- 90 日より古いレコードを毎日 04:00 に削除
+- `:8090/healthz` でヘルスチェックを応答
+
+### 必要な環境変数
+
+`.env.example` を `.env` にコピーして設定する。
+
+| 変数 | 用途 |
+| --- | --- |
+| `TURSO_URL` | Turso データベース URL |
+| `TURSO_AUTH_TOKEN` | Turso 認証トークン |
+| `PVE_API_TOKEN` | Proxmox API トークン (`monitor@pve!checker`)。リソース取得に使用 |
+
+### 起動
+
+```sh
+cd health-checker
+docker compose up -d --build
+```
+
+ローカルで直接動かす場合:
+
+```sh
+cd health-checker
+bun install
+bun run dev    # --watch 付き
+```
+
+## web
+
+Next.js (App Router) アプリ。Turso を読み取り専用で参照する。Vercel へのデプロイを前提とする。
+
+- トップページ: サービスをカテゴリ (public / internal) ごとにグループ表示。状態インジケータ・レイテンシ・CPU/メモリ使用率を表示し、30 秒ごとに自動更新する
+- 直近のチェックが 3 分以上前の場合はデータが古い旨の警告を表示する
+- `/history/[serviceId]`: サービス単位の詳細。時間レンジ (24h / 7d / 30d) を切り替えてレイテンシとリソース使用量のチャートを表示する
+- `/api/status`, `/api/history/[serviceId]`: 現在状況と履歴を返す JSON API
+
+### 必要な環境変数
+
+`.env.local.example` を `.env.local` にコピーして設定する。Vercel ではプロジェクトの環境変数に同じ値を設定する。
+
+| 変数 | 用途 |
+| --- | --- |
+| `TURSO_URL` | Turso データベース URL |
+| `TURSO_AUTH_TOKEN` | Turso 認証トークン (読み取り) |
+
+### 開発
+
+```sh
+cd web
+bun install
+bun run dev
+```
+
+| コマンド | 説明 |
+| --- | --- |
+| `bun run dev` | 開発サーバ |
+| `bun run build` | 本番ビルド |
+| `bun run lint` | Biome によるチェック |
+| `bun run format` | Biome によるフォーマット |
+
+## デプロイ
+
+### 1. Turso セットアップ
+
+```sh
+turso db create fynsv-status
+turso db tokens create fynsv-status
+turso db show fynsv-status --url
+```
+
+テーブルは health-checker 起動時に自動作成される。
+
+### 2. Proxmox API トークン作成 (pve01)
+
+```sh
+pveum user add monitor@pve --comment "Status page monitoring (read-only)"
+pveum role add Monitor -privs "VM.Audit Sys.Audit"
+pveum aclmod / -user monitor@pve -role Monitor
+pveum user token add monitor@pve checker --privsep=0
+```
+
+### 3. health-checker デプロイ (arona)
+
+リポジトリ全体を clone せず、`health-checker/` ディレクトリだけを arona に配置する。
+
+```sh
+# ローカルから arona へコピー
+scp -r services/status-page/health-checker arona:~/health-checker
+```
+
+arona 上で:
+
+```sh
+cd ~/health-checker
+cp .env.example .env
+# .env を編集: TURSO_URL, TURSO_AUTH_TOKEN, PVE_API_TOKEN
+docker compose up -d
+```
+
+更新時は同じ手順で上書きコピーし `docker compose up -d --build` で反映する。
+
+### 4. Vercel デプロイ
+
+このリポジトリを Vercel に接続する場合、Next.js アプリはリポジトリルートではなくサブディレクトリにあるため **Root Directory** の設定が必要。
+
+**Vercel Dashboard から:**
+1. プロジェクトの Settings → General → **Root Directory** を `services/status-page/web` に設定
+2. Environment Variables に `TURSO_URL` と `TURSO_AUTH_TOKEN` を追加
+3. デプロイ
+
+**CLI から:**
+```sh
+cd services/status-page/web
+vercel link
+# Root Directory を聞かれたら services/status-page/web を指定
+vercel env add TURSO_URL
+vercel env add TURSO_AUTH_TOKEN
+vercel --prod
+```
+
+## 監視対象の追加・削除
+
+`health-checker/src/config.ts` の `services` 配列で `enabled` を切り替える。変更後 arona で `docker compose up -d --build` で反映。
+
+ステータスページ側の `web/src/lib/types.ts` の `SERVICE_META` にも表示名を追加する。
+
+## トラブルシューティング
+
+| 症状 | 原因・対処 |
+| --- | --- |
+| "No check data available yet." | health-checker 未起動、または Turso 接続失敗。arona のログを確認 |
+| "Data may be stale" 警告 | health-checker 停止 or arona ダウン。arona の状態を確認 |
+| 特定サービスだけ down | コンテナが停止。`pct list` で確認 |
+| リソースが取得できない | PVE_API_TOKEN の権限を確認 (`VM.Audit`, `Sys.Audit`) |
+| Vercel ビルド失敗 | `TURSO_URL` / `TURSO_AUTH_TOKEN` 環境変数の設定を確認 |

@@ -1,0 +1,13 @@
+services:
+  health-checker:
+    build: .
+    container_name: fynsv-health-checker
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
