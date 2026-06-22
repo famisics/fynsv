@@ -10,7 +10,7 @@ tasks:
   deploy:hc:
     desc: health-checker を arona に転送してビルド・再起動する
     cmds:
-      - tar czf - -C {{.HC_DIR}} --no-xattrs --exclude node_modules --exclude .env . | ssh {{.HC_HOST}} "mkdir -p {{.HC_REMOTE_DIR}} && tar xzf - -C {{.HC_REMOTE_DIR}}"
+      - tar czf - -C {{.HC_DIR}} --no-xattrs --exclude node_modules --exclude .env . | ssh {{.HC_HOST}} "mkdir -p {{.HC_REMOTE_DIR}} && rm -rf {{.HC_REMOTE_DIR}}/src && tar xzf - -C {{.HC_REMOTE_DIR}}"
       - ssh {{.HC_HOST}} "cd {{.HC_REMOTE_DIR}} && docker compose up -d --build"
 
   deploy:web:

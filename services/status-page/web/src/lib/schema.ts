@@ -1,11 +1,8 @@
+import type { snapshots } from "@/db/schema";
+import type { InferSelectModel } from "drizzle-orm";
 import type { ResourceSnapshot, ServiceCheck } from "./types";
 
-interface SnapshotRow {
-  id: number;
-  schema_version: number;
-  data: string;
-  recorded_at: string;
-}
+type SnapshotRow = InferSelectModel<typeof snapshots>;
 
 interface V1ServiceEntry {
   status: string;
@@ -38,7 +35,7 @@ function parseV1(
       status: entry.status as ServiceCheck["status"],
       latency_ms: entry.latency_ms ?? null,
       error: entry.error ?? null,
-      checked_at: row.recorded_at,
+      checked_at: row.recordedAt,
     });
 
     if (entry.cpu_percent !== undefined) {
@@ -52,7 +49,7 @@ function parseV1(
         disk_total_bytes: entry.disk_total_bytes ?? null,
         net_in_bytes: entry.net_in_bytes ?? null,
         net_out_bytes: entry.net_out_bytes ?? null,
-        recorded_at: row.recorded_at,
+        recorded_at: row.recordedAt,
       });
     }
   }
@@ -63,8 +60,8 @@ function parseV1(
 export function parseSnapshot(
   row: SnapshotRow,
 ): { checks: ServiceCheck[]; resources: ResourceSnapshot[] } {
-  if (row.schema_version !== 1) {
-    console.error(`unknown schema version: ${row.schema_version}`);
+  if (row.schemaVersion !== 1) {
+    console.error(`unknown schema version: ${row.schemaVersion}`);
     return { checks: [], resources: [] };
   }
   return parseV1(row);
@@ -83,5 +80,3 @@ export function parseSnapshots(rows: SnapshotRow[]): {
   }
   return { checks, resources };
 }
-
-export type { SnapshotRow };

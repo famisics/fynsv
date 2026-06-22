@@ -2,7 +2,7 @@ import { asc, desc, gte } from "drizzle-orm";
 import { getDb } from "@/db";
 import { serviceMeta, snapshots } from "@/db/schema";
 import type { ResourceSnapshot, ServiceCategory, ServiceCheck, TimeRange } from "./types";
-import { parseSnapshot, parseSnapshots, type SnapshotRow } from "./schema";
+import { parseSnapshot, parseSnapshots } from "./schema";
 
 function rangeStart(range: TimeRange): string {
   const ms =
@@ -21,7 +21,7 @@ export async function getLatestSnapshot(): Promise<{
     .orderBy(desc(snapshots.recordedAt))
     .limit(1);
   if (rows.length === 0) return { checks: [], resources: [] };
-  return parseSnapshot(rows[0] as unknown as SnapshotRow);
+  return parseSnapshot(rows[0]);
 }
 
 export async function getHistory(
@@ -35,7 +35,7 @@ export async function getHistory(
     .where(gte(snapshots.recordedAt, rangeStart(range)))
     .orderBy(asc(snapshots.recordedAt));
 
-  const { checks, resources: allResources } = parseSnapshots(rows as unknown as SnapshotRow[]);
+  const { checks, resources: allResources } = parseSnapshots(rows);
 
   const stride = range === "24h" ? 1 : range === "7d" ? 5 : 20;
   const resources = allResources.filter((_, i) => i % stride === 0);
