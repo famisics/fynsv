@@ -26,10 +26,16 @@ export async function fetchResourceStats(
       signal: AbortSignal.timeout(5000),
       tls: { rejectUnauthorized: false },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`[proxmox] ${service.id}: HTTP ${res.status} from ${url}`);
+      return null;
+    }
     const body = (await res.json()) as { data?: Record<string, number> };
     const d = body.data;
-    if (!d) return null;
+    if (!d) {
+      console.error(`[proxmox] ${service.id}: no data in response`);
+      return null;
+    }
     return {
       cpu_percent: (d.cpu ?? 0) * 100,
       mem_used_bytes: d.mem ?? 0,
@@ -39,7 +45,8 @@ export async function fetchResourceStats(
       net_in_bytes: d.netin ?? 0,
       net_out_bytes: d.netout ?? 0,
     };
-  } catch {
+  } catch (e) {
+    console.error(`[proxmox] ${service.id}: ${e instanceof Error ? e.message : e}`);
     return null;
   }
 }

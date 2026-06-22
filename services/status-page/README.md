@@ -39,7 +39,7 @@ health-checker  →  Turso (libSQL)  →  web
 
 ```sh
 cd health-checker
-docker compose up -d --build
+sudo docker compose up -d --build
 ```
 
 ローカルで直接動かす場合:
@@ -88,9 +88,9 @@ bun run dev
 ### 1. Turso セットアップ
 
 ```sh
-turso db create fynsv-status
-turso db tokens create fynsv-status
-turso db show fynsv-status --url
+turso db create ui-dev-status
+turso db tokens create ui-dev-status
+turso db show ui-dev-status --url
 ```
 
 テーブルは health-checker 起動時に自動作成される。
@@ -98,7 +98,7 @@ turso db show fynsv-status --url
 ### 2. Proxmox API トークン作成 (pve01)
 
 ```sh
-pveum user add monitor@pve --comment "Status page monitoring (read-only)"
+pveum user add monitor@pve -enable 1 --comment "Status page monitoring (read-only)"
 pveum role add Monitor -privs "VM.Audit Sys.Audit"
 pveum aclmod / -user monitor@pve -role Monitor
 pveum user token add monitor@pve checker --privsep=0
@@ -119,10 +119,10 @@ arona 上で:
 cd ~/health-checker
 cp .env.example .env
 # .env を編集: TURSO_URL, TURSO_AUTH_TOKEN, PVE_API_TOKEN
-docker compose up -d
+sudo docker compose up -d --build
 ```
 
-更新時は同じ手順で上書きコピーし `docker compose up -d --build` で反映する。
+更新時は同じ手順で上書きコピーし `sudo docker compose up -d --build` で反映する。
 
 ### 4. Vercel デプロイ
 
@@ -145,9 +145,51 @@ vercel --prod
 
 ## 監視対象の追加・削除
 
-`health-checker/src/config.ts` の `services` 配列で `enabled` を切り替える。変更後 arona で `docker compose up -d --build` で反映。
+### 新しいサービスを追加する
 
-ステータスページ側の `web/src/lib/types.ts` の `SERVICE_META` にも表示名を追加する。
+2 ファイルを編集する。
+
+**1. `health-checker/src/config.ts`** — サービス定義を追加
+
+```typescript
+{
+  id: "new-service",           // 一意の ID（ケバブケース）
+  name: "New Service",         // 表示名
+  category: "internal",        // "public" or "internal"
+  enabled: true,
+  check: { type: "http", url: "http://192.168.2.xxx:8080", timeoutMs: 5000 },
+  proxmox: { node: "pve02", vmid: 300, type: "lxc" },
+},
+```
+
+チェック方式は 3 種類:
+
+| type | 必須パラメータ | 用途 |
+| --- | --- | --- |
+| `http` | `url`, `timeoutMs`, `okStatuses?` | HTTP エンドポイントがあるサービス。`okStatuses` 省略時は任意の HTTP レスポンスで up |
+| `tcp` | `host`, `port`, `timeoutMs` | ポートの到達性だけ確認（DB, Redis, SSH 等） |
+| `ping` | `host`, `timeoutMs` | inbound ポートがないサービス。ICMP でコンテナ生存のみ確認 |
+
+**2. `web/src/lib/types.ts`** — `SERVICE_META` に表示名を追加
+
+```typescript
+"new-service": { name: "New Service", category: "internal" },
+```
+
+### 反映
+
+```sh
+# 1. health-checker を再ビルド (arona)
+scp -r services/status-page/health-checker arona:~/health-checker
+ssh arona 'cd ~/health-checker && sudo docker compose up -d --build'
+
+# 2. web を再デプロイ (Vercel)
+cd services/status-page/web && vercel --prod
+```
+
+### 既存サービスを無効化する
+
+`config.ts` で `enabled: false` に変更する。Turso の既存データは残るので、過去の履歴は引き続き閲覧可能。
 
 ## トラブルシューティング
 

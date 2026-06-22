@@ -1,0 +1,21 @@
+version: "3"
+
+vars:
+  HC_DIR: health-checker
+  HC_REMOTE_DIR: "~/health-checker"
+  HC_HOST: arona
+  WEB_DIR: web
+
+tasks:
+  deploy:hc:
+    desc: health-checker を arona に転送してビルド・再起動する
+    dir: "{{.HC_DIR}}"
+    cmds:
+      - scp -r . {{.HC_HOST}}:{{.HC_REMOTE_DIR}}
+      - ssh {{.HC_HOST}} "cd {{.HC_REMOTE_DIR}} && sudo docker compose up -d --build"
+
+  deploy:web:
+    desc: web を Vercel に再デプロイする
+    dir: "{{.WEB_DIR}}"
+    cmds:
+      - vercel --prod

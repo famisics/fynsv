@@ -1,12 +1,7 @@
 import { getEnabledServices, type Service } from "./config";
 import { httpCheck, pingCheck, tcpCheck, type CheckResult } from "./checks";
-import { fetchResourceStats } from "./proxmox";
-import {
-  cleanOldRecords,
-  initDb,
-  insertCheckResult,
-  insertResourceSnapshot,
-} from "./db";
+import { fetchResourceStats, type ResourceStats } from "./proxmox";
+import { cleanOldRecords, initDb, insertSnapshot } from "./db";
 
 const PORT = 8090;
 const INTERVAL_MS = 60_000;
@@ -32,34 +27,43 @@ async function tick(): Promise<void> {
     Promise.allSettled(services.map(fetchResourceStats)),
   ]);
 
-  const writes: Promise<void>[] = [];
+  const serviceData: Record<string, Record<string, unknown>> = {};
   let up = 0;
   let down = 0;
 
   services.forEach((service, i) => {
+    const entry: Record<string, unknown> = {};
+
     const checkResult = checks[i];
     if (checkResult.status === "fulfilled") {
       const r = checkResult.value;
       r.status === "up" ? up++ : down++;
-      writes.push(insertCheckResult(service.id, r, now));
+      entry.status = r.status;
+      entry.latency_ms = r.latency_ms;
+      entry.error = r.error ?? null;
     } else {
       down++;
-      writes.push(
-        insertCheckResult(
-          service.id,
-          { status: "down", latency_ms: 0, error: String(checkResult.reason) },
-          now,
-        ),
-      );
+      entry.status = "down";
+      entry.latency_ms = 0;
+      entry.error = String(checkResult.reason);
     }
 
     const resourceResult = resources[i];
     if (resourceResult.status === "fulfilled" && resourceResult.value) {
-      writes.push(insertResourceSnapshot(service.id, resourceResult.value, now));
+      const r = resourceResult.value;
+      entry.cpu_percent = r.cpu_percent;
+      entry.mem_used_bytes = r.mem_used_bytes;
+      entry.mem_total_bytes = r.mem_total_bytes;
+      entry.disk_used_bytes = r.disk_used_bytes;
+      entry.disk_total_bytes = r.disk_total_bytes;
+      entry.net_in_bytes = r.net_in_bytes;
+      entry.net_out_bytes = r.net_out_bytes;
     }
+
+    serviceData[service.id] = entry;
   });
 
-  await Promise.allSettled(writes);
+  await insertSnapshot({ services: serviceData }, now);
   console.log(`[${now}] checked ${services.length} services: ${up} up, ${down} down`);
 }
 
@@ -101,4 +105,5 @@ Bun.serve({
 });
 
 console.log(`health-checker listening on :${PORT}`);
+console.log(`PVE_API_TOKEN: ${process.env.PVE_API_TOKEN ? "set" : "NOT SET"}`);
 loop().catch((e) => console.error("loop crashed:", e));
