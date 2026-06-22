@@ -5,7 +5,7 @@
     "": {
       "name": "fynsv-health-checker",
       "dependencies": {
-        "@libsql/client": "^0.15.0",
+        "@libsql/client": "^0.15.15",
         "drizzle-orm": "^0.45.2",
       },
       "devDependencies": {
