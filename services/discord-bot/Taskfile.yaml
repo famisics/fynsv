@@ -1,0 +1,17 @@
+version: "3"
+
+vars:
+  HOST: arona
+  REMOTE_DIR: "~/discord-bot/fun-council"
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task --list
+
+  deploy:fun-council:
+    desc: discord-bot/fun-council を arona に転送してビルド・再起動する
+    cmds:
+      - tar czf - -C {{.ROOT_DIR}} --no-xattrs --exclude .env go.mod go.sum shared fun-council/Dockerfile fun-council/docker-compose.yml fun-council/main.go | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
+      - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/fun-council && docker compose up -d --build"
