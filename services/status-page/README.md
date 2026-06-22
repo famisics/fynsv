@@ -10,7 +10,7 @@ health-checker  →  Turso (libSQL)  →  web
 ```
 
 - **health-checker**: クラスタ内で常駐し、各サービスへのヘルスチェックと Proxmox API からのリソース取得を行い、結果を Turso に書き込む。
-- **Turso**: チェック結果 (`service_checks`) とリソーススナップショット (`resource_snapshots`) を保持する libSQL データベース。
+- **Turso**: チェック結果とリソーススナップショットを JSON で保持する libSQL データベース (`snapshots` / `service_meta`)。ORM は Drizzle を使用。
 - **web**: Turso を読み取り、稼働状況・レイテンシ・リソース推移を表示する Next.js アプリ。Vercel にデプロイする。
 
 監視対象サービスの一覧 (ID / 名前 / カテゴリ / チェック方法 / 対応する Proxmox ゲスト) は [`health-checker/src/config.ts`](./health-checker/src/config.ts) が正となる。
@@ -147,9 +147,7 @@ vercel --prod
 
 ### 新しいサービスを追加する
 
-2 ファイルを編集する。
-
-**1. `health-checker/src/config.ts`** — サービス定義を追加
+`health-checker/src/config.ts` にサービス定義を追加する。表示名・カテゴリは health-checker 起動時に Turso の `service_meta` テーブルへ自動同期されるため、web 側の編集は不要。
 
 ```typescript
 {
@@ -170,22 +168,15 @@ vercel --prod
 | `tcp` | `host`, `port`, `timeoutMs` | ポートの到達性だけ確認（DB, Redis, SSH 等） |
 | `ping` | `host`, `timeoutMs` | inbound ポートがないサービス。ICMP でコンテナ生存のみ確認 |
 
-**2. `web/src/lib/types.ts`** — `SERVICE_META` に表示名を追加
-
-```typescript
-"new-service": { name: "New Service", category: "internal" },
-```
-
 ### 反映
 
 ```sh
-# 1. health-checker を再ビルド (arona)
+# health-checker を再ビルド (arona)
 scp -r services/status-page/health-checker arona:~/health-checker
 ssh arona 'cd ~/health-checker && sudo docker compose up -d --build'
-
-# 2. web を再デプロイ (Vercel)
-cd services/status-page/web && vercel --prod
 ```
+
+web 側の再デプロイは不要（service_meta は DB 経由で自動反映される）。
 
 ### 既存サービスを無効化する
 

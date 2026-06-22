@@ -1,11 +1,8 @@
-import { createClient } from "@libsql/client";
-import type { ResourceSnapshot, ServiceCheck, TimeRange } from "./types";
+import { asc, desc, gte } from "drizzle-orm";
+import { getDb } from "@/db";
+import { serviceMeta, snapshots } from "@/db/schema";
+import type { ResourceSnapshot, ServiceCategory, ServiceCheck, TimeRange } from "./types";
 import { parseSnapshot, parseSnapshots, type SnapshotRow } from "./schema";
-
-const db = createClient({
-  url: process.env.TURSO_URL!,
-  authToken: process.env.TURSO_AUTH_TOKEN!,
-});
 
 function rangeStart(range: TimeRange): string {
   const ms =
@@ -13,53 +10,52 @@ function rangeStart(range: TimeRange): string {
   return new Date(Date.now() - ms).toISOString();
 }
 
-export async function getLatestChecks(): Promise<ServiceCheck[]> {
-  const res = await db.execute(
-    `SELECT * FROM snapshots ORDER BY recorded_at DESC LIMIT 1`,
-  );
-  const row = res.rows[0] as unknown as SnapshotRow | undefined;
-  if (!row) return [];
-  return parseSnapshot(row).checks;
+export async function getLatestSnapshot(): Promise<{
+  checks: ServiceCheck[];
+  resources: ResourceSnapshot[];
+}> {
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(snapshots)
+    .orderBy(desc(snapshots.recordedAt))
+    .limit(1);
+  if (rows.length === 0) return { checks: [], resources: [] };
+  return parseSnapshot(rows[0] as unknown as SnapshotRow);
 }
 
-export async function getLatestResources(): Promise<ResourceSnapshot[]> {
-  const res = await db.execute(
-    `SELECT * FROM snapshots ORDER BY recorded_at DESC LIMIT 1`,
-  );
-  const row = res.rows[0] as unknown as SnapshotRow | undefined;
-  if (!row) return [];
-  return parseSnapshot(row).resources;
-}
-
-export async function getCheckHistory(
+export async function getHistory(
   serviceId: string,
   range: TimeRange,
-): Promise<ServiceCheck[]> {
-  const res = await db.execute({
-    sql: `SELECT * FROM snapshots WHERE recorded_at >= ? ORDER BY recorded_at ASC`,
-    args: [rangeStart(range)],
-  });
-  const { checks } = parseSnapshots(res.rows as unknown as SnapshotRow[]);
-  return checks.filter((c) => c.service_id === serviceId);
-}
+): Promise<{ checks: ServiceCheck[]; resources: ResourceSnapshot[] }> {
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(snapshots)
+    .where(gte(snapshots.recordedAt, rangeStart(range)))
+    .orderBy(asc(snapshots.recordedAt));
 
-export async function getResourceHistory(
-  serviceId: string,
-  range: TimeRange,
-): Promise<ResourceSnapshot[]> {
+  const { checks } = parseSnapshots(rows as unknown as SnapshotRow[]);
+
   const stride = range === "24h" ? 1 : range === "7d" ? 5 : 20;
-  const res = await db.execute({
-    sql: `SELECT * FROM (
-            SELECT *, ROW_NUMBER() OVER (ORDER BY recorded_at ASC) AS rn
-            FROM snapshots
-            WHERE recorded_at >= ?
-          )
-          WHERE (rn - 1) % ? = 0
-          ORDER BY recorded_at ASC`,
-    args: [rangeStart(range), stride],
-  });
-  const { resources } = parseSnapshots(res.rows as unknown as SnapshotRow[]);
-  return resources.filter((r) => r.service_id === serviceId);
+  const sampled = rows.filter((_, i) => i % stride === 0);
+  const { resources } = parseSnapshots(sampled as unknown as SnapshotRow[]);
+
+  return {
+    checks: checks.filter((c) => c.service_id === serviceId),
+    resources: resources.filter((r) => r.service_id === serviceId),
+  };
 }
 
-export { db };
+export async function getServiceMeta(): Promise<
+  Record<string, { name: string; category: ServiceCategory }> | null
+> {
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(serviceMeta)
+    .orderBy(desc(serviceMeta.version))
+    .limit(1);
+  if (rows.length === 0) return null;
+  return JSON.parse(rows[0].data);
+}

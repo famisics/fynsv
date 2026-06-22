@@ -1,12 +1,8 @@
 import { AutoRefresh } from "@/components/auto-refresh";
 import { ServiceCard } from "@/components/service-card";
-import { getLatestChecks, getLatestResources } from "@/lib/db";
+import { getLatestSnapshot, getServiceMeta } from "@/lib/db";
 import { isStale, relativeTime } from "@/lib/format";
-import {
-  getServiceMeta,
-  type ResourceSnapshot,
-  type ServiceCategory,
-} from "@/lib/types";
+import type { ResourceSnapshot, ServiceCategory } from "@/lib/types";
 
 export const revalidate = 30;
 export const dynamic = "force-dynamic";
@@ -17,10 +13,13 @@ const CATEGORY_LABEL: Record<ServiceCategory, string> = {
 };
 
 export default async function Home() {
-  const [checks, resources] = await Promise.all([
-    getLatestChecks(),
-    getLatestResources(),
+  const [{ checks, resources }, meta] = await Promise.all([
+    getLatestSnapshot(),
+    getServiceMeta(),
   ]);
+
+  const lookup = (serviceId: string) =>
+    meta?.[serviceId] ?? { name: serviceId, category: "internal" as const };
 
   const resourceById = new Map<string, ResourceSnapshot>(
     resources.map((r) => [r.service_id, r]),
@@ -36,7 +35,7 @@ export default async function Home() {
     typeof checks
   >;
   for (const c of checks) {
-    grouped[getServiceMeta(c.service_id).category].push(c);
+    grouped[lookup(c.service_id).category].push(c);
   }
 
   return (
@@ -74,7 +73,7 @@ export default async function Home() {
                   key={check.service_id}
                   check={check}
                   resource={resourceById.get(check.service_id) ?? null}
-                  meta={getServiceMeta(check.service_id)}
+                  meta={lookup(check.service_id)}
                 />
               ))}
             </div>

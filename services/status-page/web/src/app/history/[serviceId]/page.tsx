@@ -3,14 +3,18 @@ import { LatencyChart } from "@/components/charts/latency-chart";
 import { ResourceChart } from "@/components/charts/resource-chart";
 import { RangeSelector } from "@/components/range-selector";
 import { StatusIndicator } from "@/components/status-indicator";
-import { getCheckHistory, getLatestChecks, getResourceHistory } from "@/lib/db";
+import {
+  getHistory,
+  getLatestSnapshot,
+  getServiceMeta,
+} from "@/lib/db";
 import {
   formatBytes,
   formatLatency,
   percent,
   relativeTime,
 } from "@/lib/format";
-import { getServiceMeta, type TimeRange } from "@/lib/types";
+import type { TimeRange } from "@/lib/types";
 
 export const revalidate = 30;
 
@@ -32,15 +36,19 @@ export default async function HistoryPage({
   const { serviceId } = await params;
   const { range: rawRange } = await searchParams;
   const range = parseRange(rawRange);
-  const meta = getServiceMeta(serviceId);
 
-  const [checks, resources, latestChecks] = await Promise.all([
-    getCheckHistory(serviceId, range),
-    getResourceHistory(serviceId, range),
-    getLatestChecks(),
+  const [allMeta, { checks, resources }, latestSnapshot] = await Promise.all([
+    getServiceMeta(),
+    getHistory(serviceId, range),
+    getLatestSnapshot(),
   ]);
 
-  const latest = latestChecks.find((c) => c.service_id === serviceId) ?? null;
+  const meta = allMeta?.[serviceId] ?? {
+    name: serviceId,
+    category: "internal" as const,
+  };
+  const latest =
+    latestSnapshot.checks.find((c) => c.service_id === serviceId) ?? null;
   const latestResource = resources.at(-1) ?? null;
 
   return (

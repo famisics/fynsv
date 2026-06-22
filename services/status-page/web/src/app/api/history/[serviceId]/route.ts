@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getCheckHistory, getResourceHistory } from "@/lib/db";
+import { getHistory } from "@/lib/db";
 import type { TimeRange } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -16,10 +16,7 @@ export async function GET(
     ? (raw as TimeRange)
     : "24h";
 
-  const [checks, resources] = await Promise.all([
-    getCheckHistory(serviceId, range),
-    getResourceHistory(serviceId, range),
-  ]);
+  const { checks, resources } = await getHistory(serviceId, range);
 
   return NextResponse.json({ serviceId, range, checks, resources });
 }

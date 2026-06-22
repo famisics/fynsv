@@ -1,7 +1,7 @@
-import { getEnabledServices, type Service } from "./config";
+import { getEnabledServices, services, type Service } from "./config";
 import { httpCheck, pingCheck, tcpCheck, type CheckResult } from "./checks";
 import { fetchResourceStats, type ResourceStats } from "./proxmox";
-import { cleanOldRecords, initDb, insertSnapshot } from "./db";
+import { cleanOldRecords, initDb, insertSnapshot, syncServiceMeta } from "./db";
 
 const PORT = 8090;
 const INTERVAL_MS = 60_000;
@@ -85,6 +85,7 @@ async function loop(): Promise<void> {
       await Bun.sleep(10_000);
     }
   }
+  await syncServiceMeta(services);
   console.log("db initialized, starting check loop");
   while (true) {
     await tick().catch((e) => console.error("tick failed:", e));
