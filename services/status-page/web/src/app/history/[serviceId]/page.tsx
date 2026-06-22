@@ -14,17 +14,9 @@ import {
   percent,
   relativeTime,
 } from "@/lib/format";
-import type { TimeRange } from "@/lib/types";
+import { parseRange, type TimeRange } from "@/lib/types";
 
 export const revalidate = 30;
-
-const VALID_RANGES: TimeRange[] = ["24h", "7d", "30d"];
-
-function parseRange(value: string | undefined): TimeRange {
-  return VALID_RANGES.includes(value as TimeRange)
-    ? (value as TimeRange)
-    : "24h";
-}
 
 export default async function HistoryPage({
   params,

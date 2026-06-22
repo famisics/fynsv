@@ -35,11 +35,10 @@ export async function getHistory(
     .where(gte(snapshots.recordedAt, rangeStart(range)))
     .orderBy(asc(snapshots.recordedAt));
 
-  const { checks } = parseSnapshots(rows as unknown as SnapshotRow[]);
+  const { checks, resources: allResources } = parseSnapshots(rows as unknown as SnapshotRow[]);
 
   const stride = range === "24h" ? 1 : range === "7d" ? 5 : 20;
-  const sampled = rows.filter((_, i) => i % stride === 0);
-  const { resources } = parseSnapshots(sampled as unknown as SnapshotRow[]);
+  const resources = allResources.filter((_, i) => i % stride === 0);
 
   return {
     checks: checks.filter((c) => c.service_id === serviceId),

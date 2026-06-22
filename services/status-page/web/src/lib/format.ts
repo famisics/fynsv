@@ -34,3 +34,12 @@ export function relativeTime(iso: string): string {
 export function isStale(iso: string, thresholdMs = 180000): boolean {
   return Date.now() - new Date(iso).getTime() > thresholdMs;
 }
+
+export function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleString([], {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}

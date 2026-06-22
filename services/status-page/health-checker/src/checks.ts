@@ -36,21 +36,11 @@ export async function tcpCheck(
 ): Promise<CheckResult> {
   const start = performance.now();
   return new Promise((resolve) => {
-    let settled = false;
-    let connected: { end(): void } | undefined;
-    const finish = (result: CheckResult) => {
-      if (settled) return;
-      settled = true;
-      resolve(result);
-    };
+    let socket: { end(): void } | undefined;
 
     const timer = setTimeout(() => {
-      connected?.end();
-      finish({
-        status: "down",
-        latency_ms: performance.now() - start,
-        error: "timeout",
-      });
+      socket?.end();
+      resolve({ status: "down", latency_ms: performance.now() - start, error: "timeout" });
     }, timeoutMs);
 
     Bun.connect({
@@ -59,13 +49,13 @@ export async function tcpCheck(
       socket: {
         open(s) {
           clearTimeout(timer);
-          connected = s;
+          socket = s;
           s.end();
-          finish({ status: "up", latency_ms: performance.now() - start });
+          resolve({ status: "up", latency_ms: performance.now() - start });
         },
         error(_s, err) {
           clearTimeout(timer);
-          finish({
+          resolve({
             status: "down",
             latency_ms: performance.now() - start,
             error: err instanceof Error ? err.message : String(err),
@@ -76,7 +66,7 @@ export async function tcpCheck(
       },
     }).catch((err) => {
       clearTimeout(timer);
-      finish({
+      resolve({
         status: "down",
         latency_ms: performance.now() - start,
         error: err instanceof Error ? err.message : String(err),

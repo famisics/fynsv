@@ -50,14 +50,7 @@ async function tick(): Promise<void> {
 
     const resourceResult = resources[i];
     if (resourceResult.status === "fulfilled" && resourceResult.value) {
-      const r = resourceResult.value;
-      entry.cpu_percent = r.cpu_percent;
-      entry.mem_used_bytes = r.mem_used_bytes;
-      entry.mem_total_bytes = r.mem_total_bytes;
-      entry.disk_used_bytes = r.disk_used_bytes;
-      entry.disk_total_bytes = r.disk_total_bytes;
-      entry.net_in_bytes = r.net_in_bytes;
-      entry.net_out_bytes = r.net_out_bytes;
+      Object.assign(entry, resourceResult.value);
     }
 
     serviceData[service.id] = entry;
@@ -67,12 +60,14 @@ async function tick(): Promise<void> {
   console.log(`[${now}] checked ${services.length} services: ${up} up, ${down} down`);
 }
 
+const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
+let lastCleanup = 0;
+
 async function maybeCleanup(): Promise<void> {
-  const now = new Date();
-  if (now.getHours() === 4 && now.getMinutes() === 0) {
-    await cleanOldRecords(90);
-    console.log(`[${now.toISOString()}] cleaned records older than 90 days`);
-  }
+  if (Date.now() - lastCleanup < CLEANUP_INTERVAL_MS) return;
+  await cleanOldRecords(90);
+  lastCleanup = Date.now();
+  console.log(`[${new Date().toISOString()}] cleaned records older than 90 days`);
 }
 
 async function loop(): Promise<void> {

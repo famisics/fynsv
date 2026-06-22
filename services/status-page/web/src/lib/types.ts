@@ -25,3 +25,11 @@ export interface ResourceSnapshot {
 export type ServiceCategory = "public" | "internal";
 
 export type TimeRange = "24h" | "7d" | "30d";
+
+export const VALID_RANGES: TimeRange[] = ["24h", "7d", "30d"];
+
+export function parseRange(value: string | undefined): TimeRange {
+  return VALID_RANGES.includes(value as TimeRange)
+    ? (value as TimeRange)
+    : "24h";
+}

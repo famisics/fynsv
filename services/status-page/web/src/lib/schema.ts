@@ -60,22 +60,14 @@ function parseV1(
   return { checks, resources };
 }
 
-const parsers: Record<
-  number,
-  (row: SnapshotRow) => { checks: ServiceCheck[]; resources: ResourceSnapshot[] }
-> = {
-  1: parseV1,
-};
-
 export function parseSnapshot(
   row: SnapshotRow,
 ): { checks: ServiceCheck[]; resources: ResourceSnapshot[] } {
-  const parser = parsers[row.schema_version];
-  if (!parser) {
+  if (row.schema_version !== 1) {
     console.error(`unknown schema version: ${row.schema_version}`);
     return { checks: [], resources: [] };
   }
-  return parser(row);
+  return parseV1(row);
 }
 
 export function parseSnapshots(rows: SnapshotRow[]): {

@@ -9,8 +9,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { percent } from "@/lib/format";
+import { fmtTime, percent } from "@/lib/format";
 import type { ResourceSnapshot } from "@/lib/types";
+import { CHART_AXIS_STROKE, CHART_GRID_STROKE, CHART_LABEL_STYLE, CHART_TICK, CHART_TOOLTIP_STYLE } from "./theme";
 
 type Metric = "cpu" | "memory" | "disk";
 
@@ -19,15 +20,6 @@ const SERIES: Record<Metric, { label: string; color: string }> = {
   memory: { label: "Memory", color: "#a78bfa" },
   disk: { label: "Disk", color: "#f472b6" },
 };
-
-function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleString([], {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export function ResourceChart({
   data,
@@ -49,29 +41,24 @@ export function ResourceChart({
         data={points}
         margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
       >
-        <CartesianGrid stroke="#27272a" vertical={false} />
+        <CartesianGrid stroke={CHART_GRID_STROKE} vertical={false} />
         <XAxis
           dataKey="time"
           tickFormatter={fmtTime}
-          tick={{ fill: "#71717a", fontSize: 11 }}
-          stroke="#3f3f46"
+          tick={CHART_TICK}
+          stroke={CHART_AXIS_STROKE}
           minTickGap={48}
         />
         <YAxis
           domain={[0, 100]}
-          tick={{ fill: "#71717a", fontSize: 11 }}
-          stroke="#3f3f46"
+          tick={CHART_TICK}
+          stroke={CHART_AXIS_STROKE}
           width={44}
           unit="%"
         />
         <Tooltip
-          contentStyle={{
-            background: "#18181b",
-            border: "1px solid #3f3f46",
-            borderRadius: 8,
-            fontSize: 12,
-          }}
-          labelStyle={{ color: "#a1a1aa" }}
+          contentStyle={CHART_TOOLTIP_STYLE}
+          labelStyle={CHART_LABEL_STYLE}
           labelFormatter={(v) => fmtTime(v as string)}
           formatter={(value, name) => [
             value === null ? "—" : `${Math.round(value as number)}%`,

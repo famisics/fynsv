@@ -9,16 +9,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { fmtTime } from "@/lib/format";
 import type { ServiceCheck } from "@/lib/types";
-
-function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleString([], {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { CHART_AXIS_STROKE, CHART_GRID_STROKE, CHART_LABEL_STYLE, CHART_TICK, CHART_TOOLTIP_STYLE } from "./theme";
 
 export function LatencyChart({ data }: { data: ServiceCheck[] }) {
   const points = data.map((c) => ({
@@ -38,28 +31,23 @@ export function LatencyChart({ data }: { data: ServiceCheck[] }) {
             <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke="#27272a" vertical={false} />
+        <CartesianGrid stroke={CHART_GRID_STROKE} vertical={false} />
         <XAxis
           dataKey="time"
           tickFormatter={fmtTime}
-          tick={{ fill: "#71717a", fontSize: 11 }}
-          stroke="#3f3f46"
+          tick={CHART_TICK}
+          stroke={CHART_AXIS_STROKE}
           minTickGap={48}
         />
         <YAxis
-          tick={{ fill: "#71717a", fontSize: 11 }}
-          stroke="#3f3f46"
+          tick={CHART_TICK}
+          stroke={CHART_AXIS_STROKE}
           width={44}
           unit="ms"
         />
         <Tooltip
-          contentStyle={{
-            background: "#18181b",
-            border: "1px solid #3f3f46",
-            borderRadius: 8,
-            fontSize: 12,
-          }}
-          labelStyle={{ color: "#a1a1aa" }}
+          contentStyle={CHART_TOOLTIP_STYLE}
+          labelStyle={CHART_LABEL_STYLE}
           labelFormatter={(v) => fmtTime(v as string)}
           formatter={(v) => [`${v}ms`, "Latency"]}
         />

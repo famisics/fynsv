@@ -171,9 +171,7 @@ vercel --prod
 ### 反映
 
 ```sh
-# health-checker を再ビルド (arona)
-scp -r services/status-page/health-checker arona:~/health-checker
-ssh arona 'cd ~/health-checker && sudo docker compose up -d --build'
+task deploy:hc
 ```
 
 web 側の再デプロイは不要（service_meta は DB 経由で自動反映される）。
