@@ -26,6 +26,15 @@ var Command = &discordgo.ApplicationCommand{
 			Description: "リマインドする時刻 (例: 15:00, 06/24 09:30)",
 			Required:    true,
 		},
+		{
+			Type:        discordgo.ApplicationCommandOptionChannel,
+			Name:        "channel",
+			Description: "送信先チャンネル (省略時は現在のチャンネル)",
+			Required:    false,
+			ChannelTypes: []discordgo.ChannelType{
+				discordgo.ChannelTypeGuildText,
+			},
+		},
 	},
 }
 
@@ -39,12 +48,15 @@ func Handler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	options := i.ApplicationCommandData().Options
 	var message, timeStr string
+	channelID := i.ChannelID
 	for _, opt := range options {
 		switch opt.Name {
 		case "message":
 			message = opt.StringValue()
 		case "time":
 			timeStr = opt.StringValue()
+		case "channel":
+			channelID = opt.ChannelValue(nil).ID
 		}
 	}
 
@@ -59,8 +71,6 @@ func Handler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		respondText(s, i, fmt.Sprintf("指定された時刻 %s はすでに過ぎています", target.Format("01/02 15:04")))
 		return
 	}
-
-	channelID := i.ChannelID
 	var userID string
 	if i.Member != nil {
 		userID = i.Member.User.ID
@@ -74,7 +84,11 @@ func Handler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	})
 
-	respondText(s, i, fmt.Sprintf("%s (JST) にリマインドします: %s", target.Format("01/02 15:04"), message))
+	channelMention := ""
+	if channelID != i.ChannelID {
+		channelMention = fmt.Sprintf(" (<#%s>)", channelID)
+	}
+	respondText(s, i, fmt.Sprintf("%s (JST) にリマインドします%s: %s", target.Format("01/02 15:04"), channelMention, message))
 }
 
 func parseJST(s string) (time.Time, error) {
