@@ -1,0 +1,7 @@
+[user]
+	name = famisics
+	email = dev@uiro.dev
+[ghq]
+	root = ~/src
+[init]
+	defaultBranch = main

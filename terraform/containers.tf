@@ -107,6 +107,14 @@ locals {
       gateway     = "192.168.2.1"
       nameservers = ["8.8.8.8", "8.8.4.4"]
     }
+
+    kei = {
+      vm_id       = 223
+      target_node = "pve02"
+      ip_address  = "192.168.2.211/24"
+      gateway     = "192.168.2.1"
+      nameservers = ["8.8.8.8", "8.8.4.4"]
+    }
   }
 
   container_defaults = {

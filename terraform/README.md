@@ -67,6 +67,29 @@ tailscale serve clear svc:dokploy           # 申請ごと設定を削除
 
 待受ポートが不明なときは arona から `curl -s -o /dev/null -w "%{http_code}\n" http://<lan-ip>:<port>/` で探る (UI が返れば `200`/`307` 等)。
 
+#### コンテナ内で直接 Tailscale を動かす (TUN 設定)
+
+arona 代理ではなくコンテナ自身で tailscaled を動かす場合、非特権 LXC には TUN デバイスが無いため手動で追加する。Proxmox ホスト側でコンテナの設定ファイルに 2 行追加し、コンテナを再起動する:
+
+```sh
+# Proxmox ホスト (pve0X) で実行
+cat >> /etc/pve/lxc/<vmid>.conf <<'EOF'
+lxc.cgroup2.devices.allow: c 10:200 rwm
+lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file
+EOF
+
+pct reboot <vmid>
+```
+
+再起動後、コンテナ内で `/dev/net/tun` が見えることを確認してから Tailscale をインストールする:
+
+```sh
+# コンテナ内
+ls -l /dev/net/tun              # crw-rw-rw- ... 10, 200 が出ればOK
+curl -fsSL https://tailscale.com/install.sh | sh
+tailscale up                    # 認証 URL が表示される
+```
+
 ### ユーザー famisics の追加と sudo 有効化
 
 最小構成の Debian には `sudo` が入っておらず、運用は root のみになっている。一般ユーザー `famisics` を作り、sudo グループ経由で `sudo` を使えるようにする。`pct enter` で root シェルに入ってから実行する:
