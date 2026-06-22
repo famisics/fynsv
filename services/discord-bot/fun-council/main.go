@@ -28,6 +28,18 @@ func main() {
   }
   defer dg.Close()
 
+  existing, _ := dg.ApplicationCommands(dg.State.User.ID, "")
+  registered := map[string]bool{reminder.Command.Name: true}
+  for _, c := range existing {
+    if !registered[c.Name] {
+      if err := dg.ApplicationCommandDelete(dg.State.User.ID, "", c.ID); err != nil {
+        log.Printf("不要なコマンド /%s の削除に失敗しました: %v", c.Name, err)
+      } else {
+        log.Printf("不要なコマンド削除: /%s", c.Name)
+      }
+    }
+  }
+
   cmd, err := dg.ApplicationCommandCreate(dg.State.User.ID, "", reminder.Command)
   if err != nil {
     log.Fatalf("コマンド登録に失敗しました: %v", err)
