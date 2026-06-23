@@ -48,9 +48,32 @@ function fzf-select-history() {
 zle -N fzf-select-history
 bindkey '^r' fzf-select-history
 
-# ! aliases ----------------------------------------------------------------------------
+# ! claude -----------------------------------------------------------------------------
 
-alias c="claude"
+# claude を tmux セッション内で起動し、SSH 切断後も常駐させる。
+# tmux 内なら入れ子を避けて素の claude を実行。tmux 外なら fzf で既存
+# セッションへの再アタッチか新規作成かを選ぶ。
+c() {
+  if [[ -n "$TMUX" ]]; then
+    command claude "$@"
+    return
+  fi
+
+  local sessions choice
+  sessions=$(tmux list-sessions -F '#S' 2>/dev/null)
+  choice=$(printf '%s\n' '+ new session' ${(f)sessions} \
+    | fzf --prompt 'claude session> ' --height 40%)
+  [[ -z "$choice" ]] && return
+
+  if [[ "$choice" == '+ new session' ]]; then
+    local name
+    read "name?session name: "
+    [[ -z "$name" ]] && name="claude-$(date +%H%M%S)"
+    tmux new-session -s "$name" claude
+  else
+    tmux attach -t "$choice"
+  fi
+}
 
 # ! history ----------------------------------------------------------------------------
 

@@ -14,7 +14,7 @@ tasks:
       vars: [HOST]
     cmds:
       # リポジトリ内の dotfiles をホームへ展開
-      - tar czf - --no-xattrs --no-mac-metadata .zshrc .gitconfig .npmrc .bunfig.toml init.sh .config/pnpm/config.yaml | ssh {{.HOST}} "tar xzf - --overwrite -C ~"
+      - tar czf - --no-xattrs --no-mac-metadata .zshrc .tmux.conf .gitconfig .npmrc .bunfig.toml init.sh .config/pnpm/config.yaml | ssh {{.HOST}} "tar xzf - --overwrite -C ~"
       # ローカルのホームから p10k / .claude / oh-my-zsh を展開 (まるごと置き換える既存ディレクトリは掃除してから)
       # -h: dotfiles リポジトリへの symlink (.p10k.zsh / .claude/* 等) を実体化して転送する
       - ssh {{.HOST}} "rm -rf ~/.oh-my-zsh ~/.claude/commands ~/.claude/skills"

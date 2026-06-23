@@ -9,7 +9,7 @@ if [[ $EUID -eq 0 ]]; then
 fi
 
 sudo apt-get update
-sudo apt-get install -y zsh fzf fd-find git curl unzip
+sudo apt-get install -y zsh tmux fzf fd-find git curl unzip
 
 # Debian は fd-find を fdfind としてインストールする
 if command -v fdfind &>/dev/null && ! command -v fd &>/dev/null; then
