@@ -39,25 +39,29 @@ Swarm (Foursquare) のチェックイン履歴を Google カレンダーに同�
 
 ### 3. Foursquare のユーザートークン
 
+`.env` に `FOURSQUARE_CLIENT_ID` / `FOURSQUARE_CLIENT_SECRET` を設定したうえで、ローカルで認証フローを実行する。アプリが OAuth フローを行い、得たトークンを **`foursquare-token.json` に保存する** (手動コピー不要)。
+
 ```sh
-FOURSQUARE_CLIENT_ID=xxx FOURSQUARE_CLIENT_SECRET=yyy go run . -foursquare-auth
+FOURSQUARE_TOKEN_FILE=./foursquare-token.json go run . -foursquare-auth
 ```
 
-同様に同意すると `FOURSQUARE_OAUTH_TOKEN=...` が出る。これを `.env` に書く (このトークンは長期有効でチェックイン取得に使う)。
+ブラウザで同意すると `foursquare-token.json` が作られる。このトークンは長期有効で、チェックイン取得に使う。`credentials.json` と同様 deploy 時に arona へ転送される。
 
 ## 環境変数 (`.env`)
 
 | 変数 | 必須 | 説明 |
 | --- | --- | --- |
-| `FOURSQUARE_OAUTH_TOKEN` | ○ | Foursquare のユーザートークン |
+| `FOURSQUARE_CLIENT_ID` | △ | Foursquare アプリの Client ID (`-foursquare-auth` 時のみ必要) |
+| `FOURSQUARE_CLIENT_SECRET` | △ | Foursquare アプリの Client Secret (`-foursquare-auth` 時のみ必要) |
+| `FOURSQUARE_TOKEN_FILE` | | トークン保存先 (既定 `/secrets/foursquare-token.json`) |
 | `FOURSQUARE_API_VERSION` | | API バージョン日付 (既定 `20240101`) |
 | `GOOGLE_CREDENTIALS_FILE` | | SA 鍵のパス (既定 `/secrets/credentials.json`) |
 | `GOOGLE_CALENDAR_ID` | ○ | 同期先カレンダーの ID |
 | `EVENT_DURATION_MINUTES` | | イベントの長さ (分、既定 60) |
 
-Google 認証はサービスアカウント鍵 (`credentials.json`) で行うため `.env` に Google の秘密情報は持たない。`FOURSQUARE_CLIENT_ID` / `FOURSQUARE_CLIENT_SECRET` は `-foursquare-auth` 実行時のみ必要で、常駐には不要。
+Foursquare トークンと Google SA 鍵はいずれもファイル (`foursquare-token.json` / `credentials.json`) で持つため、`.env` に生のトークン・秘密鍵は置かない。
 
-ローカルで `go run . -once` 等を試すときは、`GOOGLE_CREDENTIALS_FILE=./credentials.json` を指定する (既定値はコンテナ内パスのため)。
+ローカルで `go run . -once` 等を試すときは、コンテナ内パスが既定値のため `GOOGLE_CREDENTIALS_FILE=./credentials.json` と `FOURSQUARE_TOKEN_FILE=./foursquare-token.json` を指定する。
 
 ## ローカルでの動作確認
 
@@ -70,10 +74,10 @@ go run . -once       # 直近のチェックインを 1 回だけ同期 (再実�
 ## arona へのデプロイ
 
 ```sh
-task deploy          # ソース・Dockerfile・compose.yml・.env・credentials.json を転送し docker compose up -d --build
+task deploy          # ソース・Dockerfile・compose.yml・.env・credentials.json・foursquare-token.json を転送し docker compose up -d --build
 ```
 
-`.env` と `credentials.json` も転送される。デプロイ後、コンテナは常駐し毎日 JST 0:00 に同期する。
+`.env` / `credentials.json` / `foursquare-token.json` も転送される。デプロイ後、コンテナは常駐し毎日 JST 0:00 に同期する。
 
 ### 初回バックフィル
 
@@ -98,5 +102,5 @@ task backfill        # arona 上で docker compose run --rm sync -backfill
 | --- | --- |
 | イベントが増えない | `docker compose logs` で「増分完了: N 件取得」の件数。0 件ならトークン失効か対象期間にチェックインが無い |
 | Google 401/403/404 | カレンダーが SA に共有されているか (「予定の変更権限」)、`GOOGLE_CALENDAR_ID` と `credentials.json` が正しいかを確認 |
-| Foursquare がエラー | `FOURSQUARE_OAUTH_TOKEN` 失効。`-foursquare-auth` で取り直す |
+| Foursquare がエラー | トークン失効。`-foursquare-auth` で取り直して `task deploy` |
 | 時刻がずれる | チェックインの `timeZoneOffset` を開始時刻に使う。`EVENT_DURATION_MINUTES` で長さ調整 |

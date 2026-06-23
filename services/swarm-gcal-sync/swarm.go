@@ -7,6 +7,7 @@ import (
 	"maps"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 )
@@ -124,6 +125,46 @@ func (c *SwarmClient) fetchPage(extra url.Values, offset int) ([]Checkin, error)
 		return nil, fmt.Errorf("foursquare レスポンスのデコードに失敗: %w", err)
 	}
 	return decoded.Response.Checkins.Items, nil
+}
+
+// foursquareTokenPath は Foursquare ユーザートークンを保存するファイルパスを返す。
+func foursquareTokenPath() string {
+	if p := os.Getenv("FOURSQUARE_TOKEN_FILE"); p != "" {
+		return p
+	}
+	return "/secrets/foursquare-token.json"
+}
+
+type foursquareToken struct {
+	AccessToken string `json:"access_token"`
+}
+
+// loadFoursquareToken は保存済みの Foursquare ユーザートークンを読み込む。
+func loadFoursquareToken(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("Foursquare トークンの読み込みに失敗 (%s): %w", path, err)
+	}
+	var t foursquareToken
+	if err := json.Unmarshal(data, &t); err != nil {
+		return "", fmt.Errorf("Foursquare トークンファイルの解析に失敗: %w", err)
+	}
+	if t.AccessToken == "" {
+		return "", fmt.Errorf("Foursquare トークンが空です (%s)", path)
+	}
+	return t.AccessToken, nil
+}
+
+// saveFoursquareToken は取得した Foursquare ユーザートークンをファイルに保存する。
+func saveFoursquareToken(path, token string) error {
+	data, err := json.MarshalIndent(foursquareToken{AccessToken: token}, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		return fmt.Errorf("Foursquare トークンの保存に失敗 (%s): %w", path, err)
+	}
+	return nil
 }
 
 // redactURL は *url.Error からクエリ文字列を除去し、トークン等がエラーメッセージ／

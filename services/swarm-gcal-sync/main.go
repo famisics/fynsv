@@ -70,7 +70,11 @@ func newApp(ctx context.Context) *app {
 		apiVersion = "20240101"
 	}
 
-	swarm := NewSwarmClient(mustEnv("FOURSQUARE_OAUTH_TOKEN"), apiVersion)
+	token, err := loadFoursquareToken(foursquareTokenPath())
+	if err != nil {
+		log.Fatalf("%v (先に -foursquare-auth を実行してください)", err)
+	}
+	swarm := NewSwarmClient(token, apiVersion)
 
 	credFile := os.Getenv("GOOGLE_CREDENTIALS_FILE")
 	if credFile == "" {

@@ -70,7 +70,11 @@ func runFoursquareAuth(ctx context.Context) error {
 		return fmt.Errorf("foursquare のアクセストークンが取得できませんでした (status %s)", resp.Status)
 	}
 
-	fmt.Println("\nFOURSQUARE_OAUTH_TOKEN=" + body.AccessToken)
+	path := foursquareTokenPath()
+	if err := saveFoursquareToken(path, body.AccessToken); err != nil {
+		return err
+	}
+	fmt.Printf("Foursquare トークンを保存しました: %s\n", path)
 	return nil
 }
 
