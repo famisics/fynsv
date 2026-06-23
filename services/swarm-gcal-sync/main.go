@@ -56,7 +56,7 @@ type app struct {
 }
 
 func newApp(ctx context.Context) *app {
-	durMin := 60
+	durMin := 15
 	if v := os.Getenv("EVENT_DURATION_MINUTES"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n <= 0 {
@@ -132,18 +132,18 @@ func (a *app) backfill() error {
 }
 
 func (a *app) upsertAll(checkins []Checkin, label string) error {
-	var created, skipped int
+	var created, updated int
 	for _, c := range checkins {
-		wasSkipped, err := a.gcal.UpsertCheckin(c)
+		wasUpdated, err := a.gcal.UpsertCheckin(c)
 		if err != nil {
 			return err
 		}
-		if wasSkipped {
-			skipped++
+		if wasUpdated {
+			updated++
 		} else {
 			created++
 		}
 	}
-	log.Printf("%s完了: %d 件取得 / %d 件登録 / %d 件スキップ", label, len(checkins), created, skipped)
+	log.Printf("%s完了: %d 件取得 / %d 件登録 / %d 件更新", label, len(checkins), created, updated)
 	return nil
 }

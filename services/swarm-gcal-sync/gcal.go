@@ -36,18 +36,26 @@ func NewGCalClient(ctx context.Context, credentialsFile, calendarID string, even
 }
 
 // UpsertCheckin はチェックインを 1 件カレンダーに登録する。
-// 既に同じイベントがあれば (409) スキップし、true を返す。
-func (g *GCalClient) UpsertCheckin(c Checkin) (skipped bool, err error) {
+// 同じ ID が既に存在する場合 (409) は Update で内容を反映し (updated=true)、
+// それ以外は新規作成する (updated=false)。Google は削除済みイベントの ID を
+// しばらく保持するため、Insert だけだと再作成できない。Update なら復活・更新できる。
+func (g *GCalClient) UpsertCheckin(c Checkin) (updated bool, err error) {
 	ev := g.checkinToEvent(c)
-	_, err = g.svc.Events.Insert(g.calendarID, ev).Do()
-	if err != nil {
+	if _, err := g.svc.Events.Insert(g.calendarID, ev).Do(); err == nil {
+		return false, nil
+	} else {
 		var apiErr *googleapi.Error
-		if errors.As(err, &apiErr) && apiErr.Code == 409 {
-			return true, nil
+		if !errors.As(err, &apiErr) || apiErr.Code != 409 {
+			return false, fmt.Errorf("イベント登録に失敗 (checkin %s): %w", c.ID, err)
 		}
-		return false, fmt.Errorf("イベント登録に失敗 (checkin %s): %w", c.ID, err)
 	}
-	return false, nil
+
+	// 既存 ID。削除済み (status=cancelled) でも confirmed に戻して内容を反映する。
+	ev.Status = "confirmed"
+	if _, err := g.svc.Events.Update(g.calendarID, ev.Id, ev).Do(); err != nil {
+		return false, fmt.Errorf("イベント更新に失敗 (checkin %s): %w", c.ID, err)
+	}
+	return true, nil
 }
 
 // checkinToEvent はチェックインを時刻付き短時間イベントに変換する。
