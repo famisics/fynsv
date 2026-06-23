@@ -49,7 +49,15 @@ if ! command -v bun &>/dev/null; then
   curl -fsSL https://bun.sh/install | bash
 fi
 
+# pnpm (Node 同梱の corepack で有効化。standalone バイナリの libatomic 依存を避けられる)
+if ! command -v pnpm &>/dev/null; then
+  corepack enable pnpm
+fi
+
 # デフォルトシェルを zsh に変更
-sudo chsh -s "$(which zsh)" "$USER"
+zsh_path="$(which zsh)"
+if [[ "$(getent passwd "$USER" | cut -d: -f7)" != "$zsh_path" ]]; then
+  sudo chsh -s "$zsh_path" "$USER"
+fi
 
 echo "init complete. run 'exec zsh' to start zsh."

@@ -12,6 +12,11 @@ export PATH="$HOME/.local/share/fnm:$PATH"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
+# ! pnpm -------------------------------------------------------------------------------
+
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+
 # ! oh-my-zsh --------------------------------------------------------------------------
 
 export ZSH="$HOME/.oh-my-zsh"

@@ -1,0 +1,26 @@
+version: "3"
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task --list
+
+  deploy:
+    desc: dotfiles を圧縮転送し、リモートで init.sh を適用する (HOST=<ssh host> 必須)
+    requires:
+      vars: [HOST]
+    cmds:
+      # リポジトリ内の dotfiles をホームへ展開
+      - tar czf - --no-xattrs --no-mac-metadata .zshrc .gitconfig .npmrc .bunfig.toml init.sh .config/pnpm/config.yaml | ssh {{.HOST}} "tar xzf - --overwrite -C ~"
+      # ローカルのホームから p10k / .claude / oh-my-zsh を展開 (まるごと置き換える既存ディレクトリは掃除してから)
+      # -h: dotfiles リポジトリへの symlink (.p10k.zsh / .claude/* 等) を実体化して転送する
+      - ssh {{.HOST}} "rm -rf ~/.oh-my-zsh ~/.claude/commands ~/.claude/skills"
+      - >-
+        tar czhf - -C ~ --no-xattrs --no-mac-metadata --exclude='.git'
+        .p10k.zsh
+        .claude/CLAUDE.md .claude/settings.json .claude/commands .claude/skills .claude/statusline.sh
+        .oh-my-zsh/oh-my-zsh.sh .oh-my-zsh/lib .oh-my-zsh/tools/check_for_upgrade.sh .oh-my-zsh/plugins/git .oh-my-zsh/custom/themes/powerlevel10k
+        | ssh {{.HOST}} "tar xzf - --overwrite -C ~"
+      # リモートで適用 (sudo を使うため TTY を割り当てる)
+      - ssh -t {{.HOST}} "bash ~/init.sh"

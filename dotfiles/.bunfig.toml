@@ -1,0 +1,3 @@
+[install]
+# supply chain 対策: 公開から 3 日 (259200 秒) 経過したバージョンのみインストールする
+minimumReleaseAge = 259200
