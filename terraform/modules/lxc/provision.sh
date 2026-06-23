@@ -10,10 +10,11 @@ for _ in $(seq 1 10); do apt-get update -qq && break; sleep 3; done
 
 apt-get install -y unzip git openssh-client curl sudo ca-certificates locales
 
-# ja_JP.UTF-8 ロケールを生成して既定にする (locales パッケージが locale-gen に要る)。
+# ja_JP.UTF-8 ロケールは生成しておく (必要時に LANG=ja_JP.UTF-8 で使える。locales パッケージが locale-gen に要る)。
+# ただし既定は C.UTF-8 にして、sudo/apt 等のシステムメッセージは英語のままにする (C.UTF-8 でも日本語表示は可能)。
 sed -i 's/^# *ja_JP.UTF-8 UTF-8/ja_JP.UTF-8 UTF-8/' /etc/locale.gen
 locale-gen
-update-locale LANG=ja_JP.UTF-8
+update-locale LANG=C.UTF-8
 
 # タイムゾーンを Asia/Tokyo に。コンテナ内ログが JST 表記になる。
 ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
