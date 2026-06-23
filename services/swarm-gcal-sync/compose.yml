@@ -5,6 +5,5 @@ services:
     env_file:
       - .env
     volumes:
-      - ./credentials.json:/secrets/credentials.json:ro
-      - ./foursquare-token.json:/secrets/foursquare-token.json:ro
+      - ./secrets:/app/secrets:ro
     restart: unless-stopped

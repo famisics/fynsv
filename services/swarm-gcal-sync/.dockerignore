@@ -1,6 +1,5 @@
 .env
-credentials.json
-foursquare-token.json
+secrets/
 .git
 README.md
 Taskfile.yaml

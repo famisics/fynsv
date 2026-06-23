@@ -78,7 +78,7 @@ func newApp(ctx context.Context) *app {
 
 	credFile := os.Getenv("GOOGLE_CREDENTIALS_FILE")
 	if credFile == "" {
-		credFile = "/secrets/credentials.json"
+		credFile = "secrets/credentials.json"
 	}
 
 	gcal, err := NewGCalClient(ctx,

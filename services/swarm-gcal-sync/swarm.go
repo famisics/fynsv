@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -132,7 +133,7 @@ func foursquareTokenPath() string {
 	if p := os.Getenv("FOURSQUARE_TOKEN_FILE"); p != "" {
 		return p
 	}
-	return "/secrets/foursquare-token.json"
+	return "secrets/foursquare-token.json"
 }
 
 type foursquareToken struct {
@@ -160,6 +161,9 @@ func saveFoursquareToken(path, token string) error {
 	data, err := json.MarshalIndent(foursquareToken{AccessToken: token}, "", "  ")
 	if err != nil {
 		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return fmt.Errorf("保存先ディレクトリの作成に失敗 (%s): %w", path, err)
 	}
 	if err := os.WriteFile(path, data, 0o600); err != nil {
 		return fmt.Errorf("Foursquare トークンの保存に失敗 (%s): %w", path, err)

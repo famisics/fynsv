@@ -25,7 +25,7 @@ Swarm (Foursquare) のチェックイン履歴を Google カレンダーに同�
 
 ## 認証情報の取得
 
-得た値を `.env` (`.env.example` をコピー)、SA 鍵を `credentials.json` に置く。どちらも gitignore 済み。
+設定値は `.env` (`.env.example` をコピー) に、秘密ファイルはこのディレクトリの `secrets/` に置く。`.env` と `secrets/` は gitignore 済み。秘密ファイルのパスは `.env` で**相対パス** (`secrets/...`) を使うため、ローカル実行とコンテナ (`/app/secrets` にマウント) で同じ値が通る。
 
 ### 1. 同期先カレンダーを用意し SA に共有
 
@@ -35,17 +35,18 @@ Swarm (Foursquare) のチェックイン履歴を Google カレンダーに同�
 
 ### 2. サービスアカウント鍵を配置
 
-ダウンロードした JSON 鍵をこのディレクトリに `credentials.json` として置く (コンテナには `/secrets/credentials.json` としてマウントされる)。
+ダウンロードした JSON 鍵を `secrets/credentials.json` として置く。
 
 ### 3. Foursquare のユーザートークン
 
-`.env` に `FOURSQUARE_CLIENT_ID` / `FOURSQUARE_CLIENT_SECRET` を設定したうえで、ローカルで認証フローを実行する。アプリが OAuth フローを行い、得たトークンを **`foursquare-token.json` に保存する** (手動コピー不要)。
+`.env` に `FOURSQUARE_CLIENT_ID` / `FOURSQUARE_CLIENT_SECRET` を設定したうえで、`.env` を読み込んで認証フローを実行する。アプリが OAuth フローを行い、得たトークンを **`secrets/foursquare-token.json` に保存する** (手動コピー不要・`secrets/` は自動作成)。
 
 ```sh
-FOURSQUARE_TOKEN_FILE=./foursquare-token.json go run . -foursquare-auth
+set -a; source .env; set +a   # .env を環境変数として読み込む
+go run . -foursquare-auth
 ```
 
-ブラウザで同意すると `foursquare-token.json` が作られる。このトークンは長期有効で、チェックイン取得に使う。`credentials.json` と同様 deploy 時に arona へ転送される。
+ブラウザで同意すると `secrets/foursquare-token.json` が作られる。このトークンは長期有効で、チェックイン取得に使う。`secrets/` ごと deploy 時に arona へ転送される。
 
 ## 環境変数 (`.env`)
 
@@ -53,31 +54,30 @@ FOURSQUARE_TOKEN_FILE=./foursquare-token.json go run . -foursquare-auth
 | --- | --- | --- |
 | `FOURSQUARE_CLIENT_ID` | △ | Foursquare アプリの Client ID (`-foursquare-auth` 時のみ必要) |
 | `FOURSQUARE_CLIENT_SECRET` | △ | Foursquare アプリの Client Secret (`-foursquare-auth` 時のみ必要) |
-| `FOURSQUARE_TOKEN_FILE` | | トークン保存先 (既定 `/secrets/foursquare-token.json`) |
+| `FOURSQUARE_TOKEN_FILE` | | トークン保存先 (既定 `secrets/foursquare-token.json`) |
 | `FOURSQUARE_API_VERSION` | | API バージョン日付 (既定 `20240101`) |
-| `GOOGLE_CREDENTIALS_FILE` | | SA 鍵のパス (既定 `/secrets/credentials.json`) |
+| `GOOGLE_CREDENTIALS_FILE` | | SA 鍵のパス (既定 `secrets/credentials.json`) |
 | `GOOGLE_CALENDAR_ID` | ○ | 同期先カレンダーの ID |
 | `EVENT_DURATION_MINUTES` | | イベントの長さ (分、既定 60) |
 
-Foursquare トークンと Google SA 鍵はいずれもファイル (`foursquare-token.json` / `credentials.json`) で持つため、`.env` に生のトークン・秘密鍵は置かない。
-
-ローカルで `go run . -once` 等を試すときは、コンテナ内パスが既定値のため `GOOGLE_CREDENTIALS_FILE=./credentials.json` と `FOURSQUARE_TOKEN_FILE=./foursquare-token.json` を指定する。
+Foursquare トークンと Google SA 鍵はいずれも `secrets/` 内のファイルで持つため、`.env` に生のトークン・秘密鍵は置かない。
 
 ## ローカルでの動作確認
 
 ```sh
+set -a; source .env; set +a
 go run . -once       # 直近のチェックインを 1 回だけ同期 (再実行しても重複しないことを確認)
 ```
 
-専用カレンダーに時刻付きイベントが現れれば成功。
+`.env` のパスは相対 (`secrets/...`) なので、ローカルでもパスの上書きは不要。専用カレンダーに時刻付きイベントが現れれば成功。
 
 ## arona へのデプロイ
 
 ```sh
-task deploy          # ソース・Dockerfile・compose.yml・.env・credentials.json・foursquare-token.json を転送し docker compose up -d --build
+task deploy          # ソース・Dockerfile・compose.yml・.env・secrets/ を転送し docker compose up -d --build
 ```
 
-`.env` / `credentials.json` / `foursquare-token.json` も転送される。デプロイ後、コンテナは常駐し毎日 JST 0:00 に同期する。
+`.env` と `secrets/` (SA 鍵・Foursquare トークン) も転送される。デプロイ後、コンテナは常駐し毎日 JST 0:00 に同期する。
 
 ### 初回バックフィル
 
