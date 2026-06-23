@@ -162,6 +162,8 @@ func saveFoursquareToken(path, token string) error {
 	if err != nil {
 		return err
 	}
+	// bearer token なので所有者のみに制限する。コンテナ側は root で動かして読む
+	// (compose.yml の user: "0:0")。
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return fmt.Errorf("保存先ディレクトリの作成に失敗 (%s): %w", path, err)
 	}

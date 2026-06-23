@@ -27,6 +27,8 @@ Swarm (Foursquare) のチェックイン履歴を Google カレンダーに同�
 
 設定値は `.env` (`.env.example` をコピー) に、秘密ファイルはこのディレクトリの `secrets/` に置く。`.env` と `secrets/` は gitignore 済み。秘密ファイルのパスは `.env` で**相対パス** (`secrets/...`) を使うため、ローカル実行とコンテナ (`/app/secrets` にマウント) で同じ値が通る。
 
+トークン・鍵は `0600` (所有者のみ) で保存する。コンテナはマウント元と uid が異なるため `user: "0:0"` (root) で動かし、owner-only のファイルを読む (`compose.yml`)。world-read は付けない。
+
 ### 1. 同期先カレンダーを用意し SA に共有
 
 1. Google カレンダーで専用カレンダー (例: `Swarm`) を新規作成する。
