@@ -26,7 +26,7 @@ Proxmox VE 3 ノードクラスタ (FYNSV) のインフラ管理リポジトリ�
 | --- | --- |
 | ゲストのリソース定義 (VMID / vCPU / RAM / ディスク / IP) | `terraform/containers.tf`, `terraform/vms.tf` |
 | ゲスト内部の構築・運用 | `services/*/README.md` |
-| クラスタ基盤 (ノード / Ceph / ストレージ) | `cluster/README.md` |
+| クラスタ基盤 (ノード / Ceph / ストレージ) | `services/README.md` |
 | ネットワーク (ルーター / WAN / LAN / IPv6) | `router/` |
 
 ## Terraform の構造

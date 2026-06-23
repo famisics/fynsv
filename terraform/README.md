@@ -1,6 +1,6 @@
 # FYNSV Proxmox Terraform
 
-Proxmox クラスタ **FYNSV** (pve01/02/03) を [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox/latest/docs) プロバイダで IaC 管理する。クラスタ構成の正は [`../cluster/README.md`](../cluster/README.md)。
+Proxmox クラスタ **FYNSV** (pve01/02/03) を [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox/latest/docs) プロバイダで IaC 管理する。クラスタ構成の正は [`../services/README.md`](../services/README.md)。
 
 - **認証**: API トークン (`terraform@pve!provider`)
 - **state**: ローカル (`terraform.tfstate`、`.gitignore` 済み)

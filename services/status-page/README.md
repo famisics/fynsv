@@ -1,6 +1,6 @@
 # Status Page 構成
 
-[README](../../cluster/README.md) で説明したクラスタ FYNSV 上のサービス稼働状況とリソース使用量を収集・公開するステータスページ。
+[services README](../README.md) で説明したクラスタ FYNSV 上のサービス稼働状況とリソース使用量を収集・公開するステータスページ。
 
 ## 構成
 

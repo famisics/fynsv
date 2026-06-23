@@ -1,8 +1,8 @@
 # misskey-mixi2-link 構成 (Misskey ⇔ mixi2 投稿ブリッジ)
 
-see also [../../cluster/README.md](../../cluster/README.md) / [../misskey/README.md](../misskey/README.md)
+see also [../README.md](../README.md) / [../misskey/README.md](../misskey/README.md)
 
-[README](../../cluster/README.md) で説明したクラスタ FYNSV 上の Misskey ([../misskey/README.md](../misskey/README.md)) と
+[services README](../README.md) で説明したクラスタ FYNSV 上の Misskey ([../misskey/README.md](../misskey/README.md)) と
 [mixi2](https://mixi.social) の間で投稿を相互コピーするブリッジを 1 LXC で動かす。
 本体は [famisics/misskey-mixi2-link](https://github.com/famisics/misskey-mixi2-link) (TypeScript / [Bun](https://bun.sh))。
 

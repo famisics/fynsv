@@ -1,13 +1,50 @@
-# Proxmox クラスタ FYNSV
+# FYNSV 上のサービス
 
-see also [../services/misskey/README.md](../services/misskey/README.md) / [../services/obsidian-livesync/README.md](../services/obsidian-livesync/README.md)
+この `services/` は、Proxmox VE 3 ノードクラスタ **FYNSV** 上で動かすサービス群の構築・運用文書をまとめる。
 
-> **ゲスト (VM / LXC) の構成は Terraform で管理する。**
-> リソース割り当て (vCPU / RAM / ディスク / NIC) の正は [`../terraform/`](../terraform/) を参照。
-> 本書はクラスタ基盤 (ノード / Ceph / ネットワーク / ストレージ、Terraform 管理外) と
-> 各ゲストの役割・配置を記録する。ゲスト内部の構築・運用は各サービス文書を正とする。
+> **ゲスト (VM / LXC) のリソース定義 (vCPU / RAM / ディスク / NIC / 静的 IP) の正は [`../terraform/`](../terraform/) を参照。**
+> 各サービスの内部構築・運用は各サブディレクトリの README を正とする。
+> 本書は services 全体の索引と、全サービスが共有するクラスタ基盤 (ノード / Ceph / ストレージ、Terraform 管理外) を記録する。
 
-## クラスタ概要
+## サービス一覧
+
+| サービス | ディレクトリ | 役割 | ゲスト (VMID) |
+| --- | --- | --- | --- |
+| Misskey | [`misskey/`](./misskey/README.md) | Misskey 本体 / PostgreSQL / Redis の 3 LXC 構成 | 210 / 211 / 212 |
+| misskey-mixi2-link | [`misskey-mixi2-link/`](./misskey-mixi2-link/README.md) | Misskey ⇔ mixi2 投稿ブリッジ | 216 |
+| Obsidian LiveSync | [`obsidian-livesync/`](./obsidian-livesync/README.md) | CouchDB (Obsidian Self-hosted LiveSync バックエンド) | 213 |
+| Coolify | [`coolify/`](./coolify/README.md) | コントロールプレーン / アプリ実行サーバー | 220 / 221 |
+| Status Page | [`status-page/`](./status-page/README.md) | サービス稼働状況・リソース使用量の収集と公開 | — |
+
+## ゲスト (VM / LXC) 一覧
+
+本表は役割・配置の索引。リソース割り当て (vCPU / RAM / ディスク / NIC / 静的 IP / features / タグ) は **Terraform が正** ([`../terraform/`](../terraform/))。LXC は `module.lxc["<名前>"]` (`containers.tf`)、VM は `vms.tf` で管理し、IP は `terraform output` で取得する。
+
+| VMID | 種別 | 名前                 | ノード | 用途                                            |
+| ---- | ---- | -------------------- | ------ | ----------------------------------------------- |
+| 100  | qemu | `arona`              | pve01  | 公開口 (Tailscale + cloudflared)、Docker ホスト |
+| 101  | qemu | `prana`              | pve01  | 予備 (stopped)                                  |
+| 200  | lxc  | `supabase`           | pve03  | Supabase スタック (Docker)                      |
+| 201  | lxc  | `archivebox`         | pve02  | ArchiveBox (community-script 由来)              |
+| 210  | lxc  | `misskey-web`        | pve03  | Misskey 本体 (Node.js)                          |
+| 211  | lxc  | `misskey-db`         | pve02  | PostgreSQL                                      |
+| 212  | lxc  | `misskey-redis`      | pve02  | Redis                                           |
+| 213  | lxc  | `obsidian-livesync`  | pve03  | CouchDB (Docker)、Obsidian LiveSync バックエンド |
+| 216  | lxc  | `misskey-mixi2-link` | pve02  | Misskey⇔mixi2 ブリッジ (再セットアップ待ち)     |
+| 220  | lxc  | `coolify-cp`         | pve02  | Coolify コントロールプレーン                    |
+| 221  | lxc  | `coolify-app`        | pve02  | Coolify アプリ実行サーバー                      |
+
+各ゲスト内部の構築・運用は対応するサービス文書を正とする: [misskey](./misskey/README.md) (210/211/212) / [obsidian-livesync](./obsidian-livesync/README.md) (213) / [misskey-mixi2-link](./misskey-mixi2-link/README.md) (216) / [coolify](./coolify/README.md) (220/221)。
+
+### 公開口 arona (VM 100)
+
+Tailscale と cloudflared を載せた公開口で、各サービスの外部公開はすべて arona の cloudflared (token 方式) に Public Hostname を足して行う。同一 LAN 上のコンテナは arona が Tailscale Service / サブネットルーターとして代理公開する。
+
+## クラスタ基盤
+
+全サービスが乗る Proxmox クラスタ **FYNSV** の物理基盤。Terraform 管理外 (`data` source で参照のみ)。
+
+### クラスタ概要
 
 | 項目                   | 値                                   |
 | ---------------------- | ------------------------------------ |
@@ -20,9 +57,7 @@ see also [../services/misskey/README.md](../services/misskey/README.md) / [../se
 | ノード数               | 3                                    |
 | Quorum                 | 3/3 (Quorate, expected 3)            |
 
-## ノード
-
-物理ノード・クラスタ基盤は Terraform 管理外 (`data` source で参照のみ)。
+### ノード
 
 | ノード | Node ID | CPU コア | RAM (maxmem) | OS ディスク (maxdisk) | vmbr0 (LAN)     | Tailscale                                | corosync `ring0_addr` |
 | ------ | ------- | -------- | ------------ | --------------------- | --------------- | ---------------------------------------- | --------------------- |
@@ -39,7 +74,7 @@ see also [../services/misskey/README.md](../services/misskey/README.md) / [../se
 
 `pvecm status` のメンバーシップは 192.168.2.11 / .12 / .13 で表示される。`/etc/pve/corosync.conf` と各ノード `/etc/corosync/corosync.conf` の `ring0_addr` も 192.168.2.x で一致しており、`corosync-cfgtool -s` でも LINK 0 udp が 192.168.2.x にバインドされている。
 
-## Ceph
+### Ceph
 
 Terraform 管理外。`vm-pool` は全 VM/LXC の生命線のため TF では触らない。
 
@@ -68,7 +103,7 @@ Pool 一覧 (`ceph df`)。
 
 CephFS は `cephfs` という名前で存在 (metadata pool: `cephfs_metadata`, data pools: `cephfs_data`)。`/etc/pve/storage.cfg` には登録されていない。
 
-## ストレージ (`/etc/pve/storage.cfg`, `pvesm status`)
+### ストレージ (`/etc/pve/storage.cfg`, `pvesm status`)
 
 Terraform 管理外 (`data "proxmox_datastores"` で参照のみ)。
 
@@ -77,27 +112,3 @@ Terraform 管理外 (`data "proxmox_datastores"` で参照のみ)。
 | `local`     | dir (`/var/lib/vz`)                 | node-local | iso, import, backup, vztmpl | 40.5 GiB | ISO / バックアップ / vzdump 置き場 |
 | `local-lvm` | lvmthin (vg `pve`, thinpool `data`) | node-local | rootdir, images             | 56.5 GiB | 未使用 (使用 0)                    |
 | `vm-pool`   | rbd (pool `vm-pool`, `krbd 0`)      | shared     | rootdir, images             | 949 GiB  | 全 VM / LXC のディスクが配置       |
-
-## ゲスト (VM / LXC) 一覧
-
-本表は役割・配置の索引。リソース割り当て (vCPU / RAM / ディスク / NIC / 静的 IP / features / タグ) は **Terraform が正** ([`../terraform/`](../terraform/))。LXC は `module.lxc["<名前>"]` (`containers.tf`)、VM は `vms.tf` で管理し、IP は `terraform output` で取得する。
-
-| VMID | 種別 | 名前                 | ノード | 用途                                            |
-| ---- | ---- | -------------------- | ------ | ----------------------------------------------- |
-| 100  | qemu | `arona`              | pve01  | 公開口 (Tailscale + cloudflared)、Docker ホスト |
-| 101  | qemu | `prana`              | pve01  | 予備 (stopped)                                  |
-| 200  | lxc  | `supabase`           | pve03  | Supabase スタック (Docker)                      |
-| 201  | lxc  | `archivebox`         | pve02  | ArchiveBox (community-script 由来)              |
-| 210  | lxc  | `misskey-web`        | pve03  | Misskey 本体 (Node.js)                          |
-| 211  | lxc  | `misskey-db`         | pve02  | PostgreSQL                                      |
-| 212  | lxc  | `misskey-redis`      | pve02  | Redis                                           |
-| 213  | lxc  | `obsidian-livesync`  | pve03  | CouchDB (Docker)、Obsidian LiveSync バックエンド |
-| 216  | lxc  | `misskey-mixi2-link` | pve02  | Misskey⇔mixi2 ブリッジ (再セットアップ待ち)     |
-| 220  | lxc  | `coolify-cp`         | pve02  | Coolify コントロールプレーン                    |
-| 221  | lxc  | `coolify-app`        | pve02  | Coolify アプリ実行サーバー                      |
-
-各ゲスト内部の構築・運用は対応するサービス文書を正とする: [misskey](../services/misskey/README.md) (210/211/212) / [obsidian-livesync](../services/obsidian-livesync/README.md) (213) / [misskey-mixi2-link](../services/misskey-mixi2-link/README.md) (216) / [coolify](../services/coolify/README.md) (220/221)。
-
-### 公開口 arona (VM 100)
-
-Tailscale と cloudflared を載せた公開口で、各サービスの外部公開はすべて arona の cloudflared (token 方式) に Public Hostname を足して行う。同一 LAN 上のコンテナは arona が Tailscale Service / サブネットルーターとして代理公開する。

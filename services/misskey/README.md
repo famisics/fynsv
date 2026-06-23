@@ -1,6 +1,6 @@
 # Misskey 構成
 
-[README](../../cluster/README.md) で説明したクラスタ FYNSV 上に、Misskey を以下の 3 LXC 構成で構築する。
+[services README](../README.md) で説明したクラスタ FYNSV 上に、Misskey を以下の 3 LXC 構成で構築する。
 
 | VMID | ホスト名        | 役割                      | TF リソース ([containers.tf](../../terraform/containers.tf)) |
 | ---- | --------------- | ------------------------- | ------------------------------------------------------------ |

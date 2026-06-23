@@ -1,6 +1,6 @@
 # Obsidian Self-hosted LiveSync 構成
 
-[README](../../cluster/README.md) で説明したクラスタ FYNSV 上に、Obsidian の [Self-hosted LiveSync](https://github.com/vrtmrz/obsidian-livesync) のバックエンド (CouchDB) を 1 LXC で構築する。fly.io は使わず、LXC 内の Docker で CouchDB を動かす。
+[services README](../README.md) で説明したクラスタ FYNSV 上に、Obsidian の [Self-hosted LiveSync](https://github.com/vrtmrz/obsidian-livesync) のバックエンド (CouchDB) を 1 LXC で構築する。fly.io は使わず、LXC 内の Docker で CouchDB を動かす。
 
 | VMID | ホスト名            | 役割                        | TF リソース ([containers.tf](../../terraform/containers.tf)) |
 | ---- | ------------------- | --------------------------- | ------------------------------------------------------------ |
