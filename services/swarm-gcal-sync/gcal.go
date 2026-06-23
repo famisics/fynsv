@@ -52,13 +52,15 @@ func (g *GCalClient) UpsertCheckin(c Checkin) (skipped bool, err error) {
 
 // checkinToEvent はチェックインを時刻付き短時間イベントに変換する。
 // イベント ID をチェックイン ID から決定的に生成することで再実行時の冪等性を担保する。
+// Google のイベント ID は base32hex (`[a-v0-9]`) のみ許可されるため、その範囲内の
+// 接頭辞 "fsq" を付ける (チェックイン ID は hex なのでそのまま使える)。
 func (g *GCalClient) checkinToEvent(c Checkin) *calendar.Event {
 	loc := time.FixedZone("checkin", c.TimeZoneOffset*60)
 	start := time.Unix(c.CreatedAt, 0).In(loc)
 	end := start.Add(g.eventDuration)
 
 	return &calendar.Event{
-		Id:          "swarm" + c.ID,
+		Id:          "fsq" + c.ID,
 		Summary:     g.summary(c),
 		Location:    g.location(c),
 		Description: g.description(c),
