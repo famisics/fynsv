@@ -36,22 +36,42 @@ if ! command -v gh &>/dev/null; then
 fi
 
 # fnm + Node.js (PATH は .zshrc が管理するので --skip-shell で rc を汚さない)
-if ! command -v fnm &>/dev/null; then
+# .zshrc 管理の PATH は bash 実行中の init.sh には効かないため、判定前に通しておく
+export PATH="$HOME/.local/share/fnm:$PATH"
+if command -v fnm &>/dev/null; then
+  echo "skip: fnm (already installed)"
+else
   curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
 fi
-export PATH="$HOME/.local/share/fnm:$PATH"
 eval "$(fnm env --use-on-cd --shell bash)"
-fnm install --lts
+# fnm 管理下に Node がまだ無ければ LTS を入れる (既にあれば再ダウンロードしない)
+if fnm ls 2>/dev/null | grep -qE 'v[0-9]'; then
+  echo "skip: node (already installed)"
+else
+  fnm install --lts
+fi
+# default 設定は冪等。fnm env が指す symlink を切り替えて node/npm を PATH に出す
 fnm default lts-latest
 
-# bun
-if ! command -v bun &>/dev/null; then
+# bun (PATH は .zshrc が管理するので、bash 実行中はバイナリ実体で導入済みを判定する)
+if [[ -x "$HOME/.bun/bin/bun" ]] || command -v bun &>/dev/null; then
+  echo "skip: bun (already installed)"
+else
   curl -fsSL https://bun.sh/install | bash
 fi
 
 # pnpm (Node 同梱の corepack で有効化。standalone バイナリの libatomic 依存を避けられる)
-if ! command -v pnpm &>/dev/null; then
+if command -v pnpm &>/dev/null; then
+  echo "skip: pnpm (already installed)"
+else
   corepack enable pnpm
+fi
+
+# ni (パッケージマネージャ非依存の ni/nr/nlx エイリアス)
+if command -v ni &>/dev/null; then
+  echo "skip: ni (already installed)"
+else
+  npm i -g @antfu/ni
 fi
 
 # デフォルトシェルを zsh に変更

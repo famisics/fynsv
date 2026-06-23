@@ -33,7 +33,7 @@ function fzf-select-repository() {
   local dir
   dir=$(ghq list | fzf | xargs -I{} echo "$(ghq root)/{}")
   if [[ -n "$dir" ]]; then
-    code "$dir"
+    cd "$dir"
   fi
   zle reset-prompt
 }
