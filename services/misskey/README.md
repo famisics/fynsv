@@ -369,7 +369,7 @@ vzdump は Datacenter > Backup でジョブを組むか、各ノードで `vzdum
 | ログインや投稿が遅い          | misskey-db で `pg_stat_activity`、misskey-redis で `redis-cli info clients` |
 | 添付メディアが消える / 出ない | `/opt/misskey/files` の容量と権限 (rootfs 32 GiB の使用率)                  |
 | 公開だけ落ちている            | arona で `systemctl status cloudflared` と `cloudflared tunnel info`        |
-| ノードごと落ちた                            | 生存ノードへ手動で移して起動する (HA 未導入)。手順と影響は [cluster/PLAN.md](../../cluster/PLAN.md) |
+| ノードごと落ちた                            | 生存ノードへ手動で移して起動する (HA 未導入) |
 
 ### 既知の留意点
 

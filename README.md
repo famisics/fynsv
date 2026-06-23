@@ -6,7 +6,7 @@
 
 | ディレクトリ | 内容 |
 | --- | --- |
-| [`cluster/`](./cluster/README.md) | クラスタ基盤の仕様 (ノード / Ceph / ストレージ)、可用性計画 ([PLAN.md](./cluster/PLAN.md)) |
+| [`cluster/`](./cluster/README.md) | クラスタ基盤の仕様 (ノード / Ceph / ストレージ) |
 | [`services/`](./services/) | クラスタ上で動かすサービスごとの構築・運用文書 ([misskey](./services/misskey/README.md) / [obsidian-livesync](./services/obsidian-livesync/README.md) / [coolify](./services/coolify/README.md) / [misskey-mixi2-link](./services/misskey-mixi2-link/README.md)) |
 | [`terraform/`](./terraform/README.md) | ゲスト (VM / LXC) の IaC。**リソース定義の唯一の正** |
 | [`router/`](./router/README.md) | ネットワーク機器 (NEC IX2215 ×2) の設定・トポロジ・計画 |
