@@ -28,7 +28,7 @@ Proxmox クラスタ **FYNSV** (pve01/02/03) を [bpg/proxmox](https://registry.
 
 最小構成の Debian LXC には git / curl 等が入らず `LANG=C`・UTC のままになる。払い出し直後に `modules/lxc/provision.sh` が `ssh <node>` 経由の `pct exec` で自動投入する:
 
-- apt: `unzip git openssh-client curl sudo ca-certificates locales`
+- apt: `unzip git openssh-client curl ca-certificates locales`
 - ja_JP.UTF-8 ロケール生成・既定化 (`LANG=ja_JP.UTF-8`)
 - タイムゾーン `Asia/Tokyo`
 
@@ -178,7 +178,10 @@ systemctl status myapp.service
 journalctl -u myapp.service -f
 ```
 
-## Phase 0: ブートストラップ (Proxmox 上で一度だけ・手動)
+
+## 初期設定
+
+### Phase 0: ブートストラップ (Proxmox 上で一度だけ・手動)
 
 provider が使う「親トークン」を発行する。`ssh pve01` 等で root 実行:
 
@@ -205,7 +208,7 @@ cp terraform.tfvars.example terraform.tfvars
 # pve_api_token = "terraform@pve!provider=<value>" を記入
 ```
 
-## Phase 1: 基盤 init / 疎通確認
+### Phase 1: 基盤 init / 疎通確認
 
 ```sh
 terraform init
@@ -215,7 +218,7 @@ terraform plan
 既存ゲストは import 済みなので `terraform plan` は "No changes" になる。
 認証エラー (401 等) が出たら token / endpoint を見直す。`terraform output pve_version` でも疎通確認できる。
 
-## Phase 2: クラスタ設定 (任意)
+### Phase 2: クラスタ設定 (任意)
 
 ユーザー/トークン/ACL を宣言管理する場合。まず親ロールに権限を追加:
 
@@ -237,7 +240,7 @@ terraform output -raw app_token   # 払い出されたアプリ用トークン�
 
 > `proxmox_user_token.value` は**作成時のみ**取得可能・import 不可。値は tfstate に平文で残るため、`terraform.tfstate` のファイル権限に注意 (ローカル + `.gitignore` 前提)。
 
-## Phase 3: 既存ゲストの import
+### Phase 3: 既存ゲストの import
 
 VM 100/101 は `vms.tf`、LXC (200/201/210/211/212 ほか) は `containers.tf` に取り込み済み。追加で取り込む手順:
 
@@ -267,7 +270,7 @@ state の `vm_id` 属性が null で取り込まれた場合、宣言に `vm_id`
 > 稼働中ゲストの import は読み取りのみで安全。ただし apply 前に `terraform plan` の差分 (特に force-replace) を必ず人間が確認すること。
 > 取り消したいときは `terraform state rm <addr>` で実機に触れず管理解除できる。
 
-## Phase 4: 新規 LXC の払い出し
+### Phase 4: 新規 LXC の払い出し
 
 `containers.tf` の `local.containers` に宣言してコミット → apply。`target_node` だけ書けばデフォルト (Debian 13 / 2 vCPU / 2 GB RAM / 16 GB disk / DHCP / nesting) で立つ。テンプレートは `modules/base` が各ノードに自動ダウンロードするので事前準備は不要。
 

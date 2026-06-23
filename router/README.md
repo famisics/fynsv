@@ -75,9 +75,3 @@ BIGLOBE「IPv6 オプション」を契約しているが、**ONU 直結構成�
 ### IPv4 over IPv6 (MAP-E)
 
 `Tunnel0.0` に `tunnel mode map-e` の設定が残っているが現在 `shutdown`。将来 v6 プラス系に切替えるときに利用する想定。
-
-## TODO
-
-- [ ] **WAN 冗長化の実施** — 詳細は [wan-failover-plan.md](./archives/wan-failover-plan.md)
-  - フローティング default + WAN 監視 + 自動切替を順次投入
-- [ ] LAN2 の IPv6 対応方針を決める (HGW 導入 / LAN1・LAN2 を統合 / IPv6 は LAN1 限定で運用継続 のいずれか)
