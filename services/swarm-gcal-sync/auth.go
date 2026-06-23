@@ -2,47 +2,17 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
-
-	"golang.org/x/oauth2"
 )
-
-// runGoogleAuth はローカルで OAuth2 同意フローを実行し、refresh token を標準出力する。
-// GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を環境変数から読む。OAuth クライアントの
-// 「承認済みリダイレクト URI」に http://127.0.0.1:8765/callback を登録しておくこと。
-func runGoogleAuth(ctx context.Context) error {
-	clientID := mustEnv("GOOGLE_CLIENT_ID")
-	clientSecret := mustEnv("GOOGLE_CLIENT_SECRET")
-
-	const redirect = "http://127.0.0.1:8765/callback"
-	cfg := oauthConfig(clientID, clientSecret, redirect)
-	// refresh token を確実に得るため offline + consent を指定する。
-	authURL := cfg.AuthCodeURL("state",
-		oauth2.AccessTypeOffline,
-		oauth2.SetAuthURLParam("prompt", "consent"))
-
-	code, err := listenForCode(ctx, ":8765", "/callback", authURL)
-	if err != nil {
-		return err
-	}
-
-	tok, err := cfg.Exchange(ctx, code)
-	if err != nil {
-		return fmt.Errorf("トークン交換に失敗: %w", err)
-	}
-	if tok.RefreshToken == "" {
-		return fmt.Errorf("refresh token が返りませんでした。Google アカウントのアプリ連携を解除してから再実行してください")
-	}
-
-	fmt.Println("\nGOOGLE_REFRESH_TOKEN=" + tok.RefreshToken)
-	return nil
-}
 
 // runFoursquareAuth はローカルで Foursquare の OAuth code フローを実行し、
 // 長期有効なユーザートークンを標準出力する。
@@ -53,29 +23,40 @@ func runFoursquareAuth(ctx context.Context) error {
 	clientSecret := mustEnv("FOURSQUARE_CLIENT_SECRET")
 
 	const redirect = "http://127.0.0.1:8765/callback"
+	state, err := randomState()
+	if err != nil {
+		return err
+	}
 	authURL := "https://foursquare.com/oauth2/authenticate?" + url.Values{
 		"client_id":     {clientID},
 		"response_type": {"code"},
 		"redirect_uri":  {redirect},
+		"state":         {state},
 	}.Encode()
 
-	code, err := listenForCode(ctx, ":8765", "/callback", authURL)
+	code, err := listenForCode(ctx, ":8765", "/callback", authURL, state)
 	if err != nil {
 		return err
 	}
 
-	tokenURL := "https://foursquare.com/oauth2/access_token?" + url.Values{
+	// 認証情報はクエリではなくボディで送る (URL 経由でのログ漏洩を避ける)。
+	form := url.Values{
 		"client_id":     {clientID},
 		"client_secret": {clientSecret},
 		"grant_type":    {"authorization_code"},
 		"redirect_uri":  {redirect},
 		"code":          {code},
-	}.Encode()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		"https://foursquare.com/oauth2/access_token", strings.NewReader(form.Encode()))
+	if err != nil {
+		return fmt.Errorf("リクエスト生成に失敗: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, tokenURL, nil)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("foursquare トークン交換に失敗: %w", err)
+		return fmt.Errorf("foursquare トークン交換に失敗: %w", redactURL(err))
 	}
 	defer resp.Body.Close()
 
@@ -94,8 +75,8 @@ func runFoursquareAuth(ctx context.Context) error {
 }
 
 // listenForCode はローカルに HTTP サーバを立て、authURL をユーザーに案内し、
-// リダイレクトで返ってくる ?code= を受け取る。
-func listenForCode(ctx context.Context, addr, path, authURL string) (string, error) {
+// リダイレクトで返ってくる ?code= を受け取る。CSRF 対策として state を検証する。
+func listenForCode(ctx context.Context, addr, path, authURL, wantState string) (string, error) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return "", fmt.Errorf("ローカルリスナの起動に失敗 (%s): %w", addr, err)
@@ -105,6 +86,10 @@ func listenForCode(ctx context.Context, addr, path, authURL string) (string, err
 	codeCh := make(chan string, 1)
 	mux := http.NewServeMux()
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("state") != wantState {
+			http.Error(w, "state が一致しません", http.StatusBadRequest)
+			return
+		}
 		code := r.URL.Query().Get("code")
 		if code == "" {
 			http.Error(w, "code がありません", http.StatusBadRequest)
@@ -129,6 +114,14 @@ func listenForCode(ctx context.Context, addr, path, authURL string) (string, err
 	case code := <-codeCh:
 		return code, nil
 	}
+}
+
+func randomState() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("state の生成に失敗: %w", err)
+	}
+	return hex.EncodeToString(b), nil
 }
 
 func mustEnv(key string) string {

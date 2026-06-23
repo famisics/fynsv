@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
@@ -24,23 +22,13 @@ type GCalClient struct {
 	eventDuration time.Duration
 }
 
-// oauthConfig は -google-auth とトークン更新で共有する OAuth2 設定を返す。
-func oauthConfig(clientID, clientSecret, redirectURL string) *oauth2.Config {
-	return &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		Endpoint:     google.Endpoint,
-		RedirectURL:  redirectURL,
-		Scopes:       []string{calendarScope},
-	}
-}
-
-// NewGCalClient は refresh token から自動更新されるトークンソースで Calendar サービスを生成する。
-func NewGCalClient(ctx context.Context, clientID, clientSecret, refreshToken, calendarID string, eventDuration time.Duration) (*GCalClient, error) {
-	cfg := oauthConfig(clientID, clientSecret, "")
-	ts := cfg.TokenSource(ctx, &oauth2.Token{RefreshToken: refreshToken})
-
-	svc, err := calendar.NewService(ctx, option.WithTokenSource(ts))
+// NewGCalClient はサービスアカウント鍵で Calendar サービスを生成する。
+// 対象カレンダーを SA のメールアドレスに「予定の変更権限」で共有しておくこと。
+func NewGCalClient(ctx context.Context, credentialsFile, calendarID string, eventDuration time.Duration) (*GCalClient, error) {
+	svc, err := calendar.NewService(ctx,
+		option.WithCredentialsFile(credentialsFile),
+		option.WithScopes(calendarScope),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("calendar サービスの生成に失敗: %w", err)
 	}

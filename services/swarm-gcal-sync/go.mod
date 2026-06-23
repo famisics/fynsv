@@ -4,7 +4,6 @@ go 1.24
 
 require (
 	github.com/robfig/cron/v3 v3.0.1
-	golang.org/x/oauth2 v0.24.0
 	google.golang.org/api v0.214.0
 )
 
@@ -25,6 +24,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576 // indirect

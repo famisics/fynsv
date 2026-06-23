@@ -1,4 +1,5 @@
 .env
+credentials.json
 .git
 README.md
 Taskfile.yaml

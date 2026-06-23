@@ -22,19 +22,12 @@ const incrementalLookback = 25 * time.Hour
 func main() {
 	backfill := flag.Bool("backfill", false, "過去の全チェックインを取り込んで終了する")
 	once := flag.Bool("once", false, "増分同期を 1 回だけ実行して終了する")
-	googleAuth := flag.Bool("google-auth", false, "Google の OAuth 同意フローを実行し refresh token を表示する")
 	foursquareAuth := flag.Bool("foursquare-auth", false, "Foursquare の OAuth フローを実行しユーザートークンを表示する")
 	flag.Parse()
 
 	ctx := context.Background()
 
-	switch {
-	case *googleAuth:
-		if err := runGoogleAuth(ctx); err != nil {
-			log.Fatal(err)
-		}
-		return
-	case *foursquareAuth:
+	if *foursquareAuth {
 		if err := runFoursquareAuth(ctx); err != nil {
 			log.Fatal(err)
 		}
@@ -79,10 +72,13 @@ func newApp(ctx context.Context) *app {
 
 	swarm := NewSwarmClient(mustEnv("FOURSQUARE_OAUTH_TOKEN"), apiVersion)
 
+	credFile := os.Getenv("GOOGLE_CREDENTIALS_FILE")
+	if credFile == "" {
+		credFile = "/secrets/credentials.json"
+	}
+
 	gcal, err := NewGCalClient(ctx,
-		mustEnv("GOOGLE_CLIENT_ID"),
-		mustEnv("GOOGLE_CLIENT_SECRET"),
-		mustEnv("GOOGLE_REFRESH_TOKEN"),
+		credFile,
 		mustEnv("GOOGLE_CALENDAR_ID"),
 		time.Duration(durMin)*time.Minute,
 	)

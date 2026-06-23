@@ -20,27 +20,22 @@ Swarm (Foursquare) のチェックイン履歴を Google カレンダーに同�
 
 - `arona` に SSH (`ssh arona`) で入れて Docker / Docker Compose v2 が使えること。
 - ローカルに Go 1.24 と [Task](https://taskfile.dev/) があること。
-- Google Cloud プロジェクトで **Google Calendar API** を有効化し、種類「デスクトップアプリ」または「ウェブアプリ」の OAuth 2.0 クライアントを作成済みであること。承認済みリダイレクト URI に `http://127.0.0.1:8765/callback` を登録する。
+- Google Cloud プロジェクトで **Google Calendar API** を有効化し、**サービスアカウント**を作成して JSON 鍵をダウンロード済みであること (無人運用のため OAuth ではなく SA を使う。トークン失効が無い)。
 - [Foursquare 開発者ポータル](https://foursquare.com/developers/)でアプリを作成し、Redirect URI に `http://127.0.0.1:8765/callback` を登録済みであること。
 
 ## 認証情報の取得
 
-すべてローカルで一度だけ実行し、得た値を `.env` (`.env.example` をコピー) に書く。
+得た値を `.env` (`.env.example` をコピー)、SA 鍵を `credentials.json` に置く。どちらも gitignore 済み。
 
-### 1. 同期先カレンダーを用意
+### 1. 同期先カレンダーを用意し SA に共有
 
-Google カレンダーで専用カレンダー (例: `Swarm`) を新規作成し、その設定 > 「カレンダーの統合」にある **カレンダー ID** (`...@group.calendar.google.com`) を控える → `GOOGLE_CALENDAR_ID`。
+1. Google カレンダーで専用カレンダー (例: `Swarm`) を新規作成する。
+2. そのカレンダーの設定 > 「特定のユーザーやグループと共有」で、**サービスアカウントのメールアドレス** (`...@<project>.iam.gserviceaccount.com`) を「**予定の変更権限**」で追加する。
+3. 同じ設定の「カレンダーの統合」にある **カレンダー ID** (`...@group.calendar.google.com`) を控える → `GOOGLE_CALENDAR_ID`。
 
-### 2. Google の refresh token
+### 2. サービスアカウント鍵を配置
 
-```sh
-GOOGLE_CLIENT_ID=xxx GOOGLE_CLIENT_SECRET=yyy go run . -google-auth
-```
-
-表示された URL をブラウザで開いて同意すると、ターミナルに `GOOGLE_REFRESH_TOKEN=...` が出る。`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REFRESH_TOKEN` を `.env` に書く。
-
-> [!NOTE]
-> refresh token が表示されない場合は、Google アカウントの[アプリ連携](https://myaccount.google.com/connections)から該当アプリのアクセスを一度解除してから再実行する (`prompt=consent` を付けているが、既存の付与があると返らないことがある)。
+ダウンロードした JSON 鍵をこのディレクトリに `credentials.json` として置く (コンテナには `/secrets/credentials.json` としてマウントされる)。
 
 ### 3. Foursquare のユーザートークン
 
@@ -56,13 +51,13 @@ FOURSQUARE_CLIENT_ID=xxx FOURSQUARE_CLIENT_SECRET=yyy go run . -foursquare-auth
 | --- | --- | --- |
 | `FOURSQUARE_OAUTH_TOKEN` | ○ | Foursquare のユーザートークン |
 | `FOURSQUARE_API_VERSION` | | API バージョン日付 (既定 `20240101`) |
-| `GOOGLE_CLIENT_ID` | ○ | OAuth クライアント ID |
-| `GOOGLE_CLIENT_SECRET` | ○ | OAuth クライアントシークレット |
-| `GOOGLE_REFRESH_TOKEN` | ○ | `-google-auth` で取得した refresh token |
+| `GOOGLE_CREDENTIALS_FILE` | | SA 鍵のパス (既定 `/secrets/credentials.json`) |
 | `GOOGLE_CALENDAR_ID` | ○ | 同期先カレンダーの ID |
 | `EVENT_DURATION_MINUTES` | | イベントの長さ (分、既定 60) |
 
-`FOURSQUARE_CLIENT_ID` / `FOURSQUARE_CLIENT_SECRET` は `-foursquare-auth` 実行時のみ必要で、常駐には不要。
+Google 認証はサービスアカウント鍵 (`credentials.json`) で行うため `.env` に Google の秘密情報は持たない。`FOURSQUARE_CLIENT_ID` / `FOURSQUARE_CLIENT_SECRET` は `-foursquare-auth` 実行時のみ必要で、常駐には不要。
+
+ローカルで `go run . -once` 等を試すときは、`GOOGLE_CREDENTIALS_FILE=./credentials.json` を指定する (既定値はコンテナ内パスのため)。
 
 ## ローカルでの動作確認
 
@@ -75,10 +70,10 @@ go run . -once       # 直近のチェックインを 1 回だけ同期 (再実�
 ## arona へのデプロイ
 
 ```sh
-task deploy          # go.mod go.sum *.go Dockerfile compose.yml .env を転送し docker compose up -d --build
+task deploy          # ソース・Dockerfile・compose.yml・.env・credentials.json を転送し docker compose up -d --build
 ```
 
-`.env` も転送される。デプロイ後、コンテナは常駐し毎日 JST 0:00 に同期する。
+`.env` と `credentials.json` も転送される。デプロイ後、コンテナは常駐し毎日 JST 0:00 に同期する。
 
 ### 初回バックフィル
 
@@ -102,6 +97,6 @@ task backfill        # arona 上で docker compose run --rm sync -backfill
 | 症状 | 最初に見る場所 |
 | --- | --- |
 | イベントが増えない | `docker compose logs` で「増分完了: N 件取得」の件数。0 件ならトークン失効か対象期間にチェックインが無い |
-| Google 401/403 | refresh token 失効。`-google-auth` で取り直して `.env` 更新 → `task deploy` |
+| Google 401/403/404 | カレンダーが SA に共有されているか (「予定の変更権限」)、`GOOGLE_CALENDAR_ID` と `credentials.json` が正しいかを確認 |
 | Foursquare がエラー | `FOURSQUARE_OAUTH_TOKEN` 失効。`-foursquare-auth` で取り直す |
 | 時刻がずれる | チェックインの `timeZoneOffset` を開始時刻に使う。`EVENT_DURATION_MINUTES` で長さ調整 |
