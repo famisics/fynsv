@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"maps"
 	"net/http"
@@ -110,7 +111,7 @@ func (c *SwarmClient) fetchPage(extra url.Values, offset int) ([]Checkin, error)
 
 	resp, err := c.http.Get(swarmCheckinsURL + "?" + params.Encode())
 	if err != nil {
-		return nil, fmt.Errorf("foursquare リクエストに失敗: %w", err)
+		return nil, fmt.Errorf("foursquare リクエストに失敗: %w", redactURL(err))
 	}
 	defer resp.Body.Close()
 
@@ -123,4 +124,18 @@ func (c *SwarmClient) fetchPage(extra url.Values, offset int) ([]Checkin, error)
 		return nil, fmt.Errorf("foursquare レスポンスのデコードに失敗: %w", err)
 	}
 	return decoded.Response.Checkins.Items, nil
+}
+
+// redactURL は *url.Error からクエリ文字列を除去し、トークン等がエラーメッセージ／
+// ログに漏れないようにする。Foursquare v2 はトークンをクエリで要求するため URL に
+// 載るが、失敗時のラップで露出させない。
+func redactURL(err error) error {
+	var uerr *url.Error
+	if errors.As(err, &uerr) {
+		if u, perr := url.Parse(uerr.URL); perr == nil {
+			u.RawQuery = ""
+			uerr.URL = u.String()
+		}
+	}
+	return err
 }
