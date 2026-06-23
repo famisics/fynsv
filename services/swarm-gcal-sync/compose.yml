@@ -1,0 +1,7 @@
+services:
+  sync:
+    build:
+      context: .
+    env_file:
+      - .env
+    restart: unless-stopped
