@@ -76,14 +76,6 @@ locals {
       nameservers = ["8.8.8.8", "8.8.4.4"]
     }
 
-    misskey-mixi2-link = {
-      vm_id       = 216
-      target_node = "pve02"
-      ip_address  = "192.168.2.207/24"
-      gateway     = "192.168.2.1"
-      nameservers = ["8.8.8.8", "8.8.4.4"]
-    }
-
     coolify-cp = {
       vm_id       = 220
       target_node = "pve02"
