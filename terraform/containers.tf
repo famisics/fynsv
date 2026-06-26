@@ -4,8 +4,8 @@
 #
 # 払い出し例:
 #   mybox = { target_node = "pve01" }
-# 上書き例 (static IP のときは gateway / nameservers も指定。IX2215 は DNS をフォワードしない):
-#   mybox = { target_node = "pve01", cores = 4, memory = 4096, ip_address = "192.168.2.220/24", gateway = "192.168.2.1", nameservers = ["8.8.8.8", "8.8.4.4"] }
+# 上書き例 (static IP は ip_address のみ指定。gateway / nameservers は container_defaults の共通値が効く):
+#   mybox = { target_node = "pve01", cores = 4, memory = 4096, ip_address = "192.168.2.220/24" }
 #
 # テンプレート更新で既存コンテナは作り直されない (modules/lxc の ignore_changes)。
 # 意図的に作り直す場合: terraform apply -replace='module.lxc["<name>"].proxmox_virtual_environment_container.this'
@@ -19,22 +19,18 @@ locals {
       target_node = "pve03"
       cores       = 4
       memory      = 4096
+      swap        = 2048
       disk_size   = 32
       ip_address  = "192.168.2.202/24"
-      gateway     = "192.168.2.1"
-      nameservers = ["8.8.8.8", "8.8.4.4"]
     }
 
     archivebox = {
       vm_id       = 201
-      target_node = "pve02"
-      cores       = 4
+      target_node = "pve01"
       memory      = 4096
       disk_size   = 64
       firewall    = false
       ip_address  = "192.168.2.201/24"
-      gateway     = "192.168.2.1"
-      nameservers = ["8.8.8.8", "8.8.4.4"]
     }
 
     misskey-web = {
@@ -43,8 +39,6 @@ locals {
       disk_size   = 32
       firewall    = false
       ip_address  = "192.168.2.203/24"
-      gateway     = "192.168.2.1"
-      nameservers = ["8.8.8.8", "8.8.4.4"]
     }
 
     misskey-db = {
@@ -53,8 +47,6 @@ locals {
       disk_size   = 24
       firewall    = false
       ip_address  = "192.168.2.204/24"
-      gateway     = "192.168.2.1"
-      nameservers = ["8.8.8.8", "8.8.4.4"]
     }
 
     misskey-redis = {
@@ -64,48 +56,36 @@ locals {
       disk_size   = 8
       firewall    = false
       ip_address  = "192.168.2.205/24"
-      gateway     = "192.168.2.1"
-      nameservers = ["8.8.8.8", "8.8.4.4"]
     }
 
     obsidian-livesync = {
       vm_id       = 213
-      target_node = "pve03"
+      target_node = "pve01"
       ip_address  = "192.168.2.206/24"
-      gateway     = "192.168.2.1"
-      nameservers = ["8.8.8.8", "8.8.4.4"]
     }
 
     coolify-cp = {
       vm_id       = 220
       target_node = "pve02"
       ip_address  = "192.168.2.208/24"
-      gateway     = "192.168.2.1"
-      nameservers = ["8.8.8.8", "8.8.4.4"]
     }
 
     coolify-app = {
       vm_id       = 221
       target_node = "pve02"
       ip_address  = "192.168.2.209/24"
-      gateway     = "192.168.2.1"
-      nameservers = ["8.8.8.8", "8.8.4.4"]
     }
 
     dokploy = {
       vm_id       = 222
-      target_node = "pve03"
+      target_node = "pve01"
       ip_address  = "192.168.2.210/24"
-      gateway     = "192.168.2.1"
-      nameservers = ["8.8.8.8", "8.8.4.4"]
     }
 
     kei = {
       vm_id       = 223
-      target_node = "pve02"
+      target_node = "pve03"
       ip_address  = "192.168.2.211/24"
-      gateway     = "192.168.2.1"
-      nameservers = ["8.8.8.8", "8.8.4.4"]
     }
   }
 
@@ -118,11 +98,12 @@ locals {
     swap             = 512
     disk_size        = 16
     ip_address       = "dhcp"
-    gateway          = null
-    nameservers      = []
+    gateway          = "192.168.2.1"          # static IP のとき適用。dhcp 時はモジュールが null 化する
+    nameservers      = ["8.8.8.8", "8.8.4.4"] # IX2215 は DNS をフォワードしないため外部 DNS を指定
     firewall         = true
     nesting          = true # Docker は nesting=1 だけで動く (keyctl 等は API トークンでは設定不可)
     keyctl           = false
+    started          = true # false にすると apply 時にシャットダウンする
     start_on_boot    = true
     tags             = ["terraform"]
     provision        = true # 作成後に apt ベースライン / ロケール / TZ を流す
@@ -148,6 +129,7 @@ module "lxc" {
   firewall         = each.value.firewall
   nesting          = each.value.nesting
   keyctl           = each.value.keyctl
+  started          = each.value.started
   start_on_boot    = each.value.start_on_boot
   tags             = each.value.tags
   provision        = each.value.provision
