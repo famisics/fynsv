@@ -1,0 +1,70 @@
+import { fmtTime } from "@/lib/format";
+import type { TimeRange } from "@/lib/types";
+import {
+  computeUptime,
+  fmtUptime,
+  type UptimeSummary,
+  uptimeColor,
+} from "@/lib/uptime";
+
+const ROWS: { range: TimeRange; label: string }[] = [
+  { range: "24h", label: "24h" },
+  { range: "7d", label: "7d" },
+  { range: "30d", label: "30d" },
+];
+
+export function NetworkUptime({
+  timestamps,
+  firstEver,
+  now,
+}: {
+  timestamps: number[];
+  firstEver: number | null;
+  now: number;
+}) {
+  return (
+    <section className="mb-10 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
+      <h2 className="mb-4 text-xs font-medium uppercase tracking-wider text-zinc-500">
+        Network
+      </h2>
+      <div className="space-y-4">
+        {ROWS.map(({ range, label }) => (
+          <UptimeRow
+            key={range}
+            label={label}
+            summary={computeUptime(timestamps, range, now, firstEver)}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function UptimeRow({
+  label,
+  summary,
+}: {
+  label: string;
+  summary: UptimeSummary;
+}) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between text-xs">
+        <span className="text-zinc-400">{label}</span>
+        <span className="tabular-nums text-zinc-300">
+          {fmtUptime(summary.ratio)} uptime
+        </span>
+      </div>
+      <div className="flex h-7 gap-px">
+        {summary.buckets.map((b) => (
+          <div
+            key={b.start}
+            className="flex-1 rounded-[1px]"
+            style={{ backgroundColor: uptimeColor(b.ratio) }}
+            title={`${fmtTime(b.start)} – ${fmtTime(b.end)}: ${fmtUptime(b.ratio)}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

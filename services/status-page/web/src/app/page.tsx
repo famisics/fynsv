@@ -1,6 +1,12 @@
 import { AutoRefresh } from "@/components/auto-refresh";
+import { NetworkUptime } from "@/components/network-uptime";
 import { ServiceCard } from "@/components/service-card";
-import { getLatestSnapshot, getServiceMeta } from "@/lib/db";
+import {
+  getFirstSnapshotTime,
+  getLatestSnapshot,
+  getServiceMeta,
+  getSnapshotTimes,
+} from "@/lib/db";
 import { isStale, relativeTime } from "@/lib/format";
 import type { ResourceSnapshot, ServiceCategory } from "@/lib/types";
 
@@ -13,10 +19,14 @@ const CATEGORY_LABEL: Record<ServiceCategory, string> = {
 };
 
 export default async function Home() {
-  const [{ checks, resources }, meta] = await Promise.all([
-    getLatestSnapshot(),
-    getServiceMeta(),
-  ]);
+  const [{ checks, resources }, meta, snapshotTimes, firstEver] =
+    await Promise.all([
+      getLatestSnapshot(),
+      getServiceMeta(),
+      getSnapshotTimes("30d"),
+      getFirstSnapshotTime(),
+    ]);
+  const now = Date.now();
 
   const lookup = (serviceId: string) =>
     meta?.[serviceId] ?? { name: serviceId, category: "internal" as const };
@@ -56,6 +66,12 @@ export default async function Home() {
           {newest && relativeTime(newest)}.
         </div>
       )}
+
+      <NetworkUptime
+        timestamps={snapshotTimes}
+        firstEver={firstEver}
+        now={now}
+      />
 
       {checks.length === 0 && (
         <p className="text-sm text-zinc-500">No check data available yet.</p>
