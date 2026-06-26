@@ -39,6 +39,7 @@ Claude Code が SSH 越し / シリアル越しのリモート機器を **tmux �
 ```sh
 .claude/skills/claude-remote/scripts/remote-open    <target>           # セッション起動 (冪等)
 .claude/skills/claude-remote/scripts/remote-send    <target> '<text>'  # 行送信 (末尾 Enter 自動)
+.claude/skills/claude-remote/scripts/remote-run     <target> '<cmd>'   # ssh 専用: 完了まで同期待ちして出力返却
 .claude/skills/claude-remote/scripts/remote-capture <target>           # 画面取得 (デフォルト 200 行)
 .claude/skills/claude-remote/scripts/remote-status                     # 一覧
 .claude/skills/claude-remote/scripts/remote-close   <target>           # 終了
@@ -63,6 +64,20 @@ Claude Code が SSH 越し / シリアル越しのリモート機器を **tmux �
 
 `remote-capture` は描画後のプレーンテキストを返す。完了判定はプロンプト (`#`, `$`, `root@host:~#`, `Router#`, `Router(config)#` 等) の有無で行う。送信直後に capture してよい — 出力が途中ならユーザーが attach 画面で確認したうえで次の capture を承認するので、`sleep` で待つ必要はない。
 
+### 同期実行 (ssh 専用)
+
+非対話の 1 コマンドを「完了まで待って出力ごと返す」場合は `remote-run` を使う。capture のタイミングを計る必要がなく、「まだ処理中なのに capture してしまう」問題が起きない。
+
+```bash
+.claude/skills/claude-remote/scripts/remote-run ssh:pve01 'apt update'
+.claude/skills/claude-remote/scripts/remote-run -t 300 ssh:pve01 'apt upgrade -y'   # timeout 300s (既定 60)
+```
+
+- 仕組み: コマンド末尾に完了マーカー (`; echo <marker>:$?`) を付けて送り、ローカルで `capture-pane` をポーリング。マーカー＋終了コードが出たら抜ける。`sleep` 待機はラッパー内に隠れるので、Claude から見れば「呼び出しが返った = コマンド完了」になる。終了コードはそのまま `remote-run` の exit code に伝播する。
+- **ssh ターゲット (POSIX シェル) 専用**。serial / IX2215 ルーターでは使えない (シェルの `; echo $?` 意味論が無い)。
+- **対話プログラムが前面にある間は使わない** (`less`/`journalctl` ページャ、`sudo` パスワード、`pct enter`、`configure` モード等)。マーカー文字列がそのプログラムへの入力になってしまう。これらは従来の `remote-send` + 人間承認 + `remote-capture` で扱う。
+- タイムアウト時は exit 124 を返し、その時点の画面を出力する。止まっている場合 (対話プロンプト等) は従来フローに切り替える。
+
 ## 運用フロー
 
 ### Step 1: 起動
@@ -80,6 +95,7 @@ Claude Code が SSH 越し / シリアル越しのリモート機器を **tmux �
 ### Step 2: 同期的ループ
 
 - **1 コマンド → capture → 結果確認 → 次コマンド** の同期的ループを基本とする (各ステップごとにユーザーが attach 画面を見て permission prompt で承認する)。
+- ssh ターゲットの非対話コマンドは `remote-run` で同期実行すると capture のタイミングを計らずに済む。対話・ページャ・パスワード入力・ルーターは `remote-send` + `remote-capture` を使う。
 - ページャに入ったら kind に応じて対処する (ssh の `less`/`journalctl`、IX の `--More--` など)。詳細は references。可能ならコマンド側でページャを抑止する (`--no-pager` / `| cat` 等)。
 - パスワード入力はログに残る。**ユーザーに attach 画面で直接入力してもらう** か、`NOPASSWD` を確認してから流す。
 

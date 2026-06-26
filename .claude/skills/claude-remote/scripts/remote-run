@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Run one non-interactive command on a POSIX-shell ssh target and block until it
+# finishes, then print the captured output. A completion marker is appended to
+# the command line and the pane is polled locally until the marker (with the
+# command's exit status) appears.
+#
+#   remote-run <target> '<cmd>'
+#   remote-run -t 120 <target> '<cmd>'   # timeout 120s (default 60)
+#   remote-run -n 5000 <target> '<cmd>'  # capture window for marker search
+#
+# Exit status mirrors the remote command's exit code. On timeout: exit 124 and
+# the current pane content is printed (switch back to remote-send/remote-capture).
+#
+# NOT for: serial/router consoles, or while an interactive program is in the
+# foreground (pager, sudo password, pct enter, configure mode) — the marker
+# would be fed to that program instead of the shell. Use remote-send there.
+
+set -euo pipefail
+
+_BIN_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+# shellcheck source=lib/common.sh
+source "$_BIN_DIR/lib/common.sh"
+# shellcheck source=lib/parse-target.sh
+source "$_BIN_DIR/lib/parse-target.sh"
+
+timeout=60
+lines=5000
+poll=0.3
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -t) timeout="$2"; shift 2 ;;
+    -n) lines="$2"; shift 2 ;;
+    --) shift; break ;;
+    -*) die "unknown flag: $1" ;;
+    *)  break ;;
+  esac
+done
+
+remote_bootstrap "${1-}"
+shift || die "missing command to run"
+session_exists "$TARGET_SESSION" || die "session not found: $TARGET_SESSION (run remote-open first)"
+[[ "$TARGET_KIND" == "ssh" ]] || die "remote-run is ssh-only; use remote-send for $TARGET_KIND (serial/router)"
+[[ $# -ge 1 ]] || die "missing command to run"
+
+cmd="$*"
+marker="__CR_DONE_$(date +%s)_${RANDOM}__"
+
+# The echoed input line shows '...:$?' unexpanded, so anchoring on a digit after
+# the colon distinguishes the real result line from the command echo.
+tmux send-keys -t "$TARGET_SESSION" -- "$cmd ; echo ${marker}:\$?" Enter
+
+deadline=$(( $(date +%s) + timeout ))
+rc=""
+while :; do
+  out="$(tmux capture-pane -t "$TARGET_SESSION" -p -S "-${lines}")"
+  if line="$(grep -m1 "^${marker}:[0-9]" <<<"$out")"; then
+    rc="${line##*:}"
+    break
+  fi
+  if (( $(date +%s) >= deadline )); then
+    log_warn "timeout after ${timeout}s; command may still be running (interactive prompt?)"
+    printf '%s\n' "$out"
+    exit 124
+  fi
+  sleep "$poll"
+done
+
+# Print everything up to (excluding) the marker line and anything after it.
+printf '%s\n' "$out" | sed "/^${marker}:[0-9]/,\$d"
+log_info "exit ${rc}"
+exit "$rc"
