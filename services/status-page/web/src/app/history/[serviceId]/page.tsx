@@ -14,7 +14,8 @@ import {
   percent,
   relativeTime,
 } from "@/lib/format";
-import { parseRange, type TimeRange } from "@/lib/types";
+import { findGaps, GAP_THRESHOLD_MS, RANGE_MS } from "@/lib/history";
+import { parseRange } from "@/lib/types";
 
 export const revalidate = 30;
 
@@ -42,6 +43,14 @@ export default async function HistoryPage({
   const latest =
     latestSnapshot.checks.find((c) => c.service_id === serviceId) ?? null;
   const latestResource = resources.at(-1) ?? null;
+
+  const end = Date.now();
+  const domain: [number, number] = [end - RANGE_MS[range], end];
+  const gaps = findGaps(
+    checks.map((c) => Date.parse(c.checked_at)),
+    GAP_THRESHOLD_MS,
+    end,
+  );
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
@@ -93,12 +102,21 @@ export default async function HistoryPage({
       )}
 
       <Section title="Response time">
-        {checks.length > 0 ? <LatencyChart data={checks} /> : <Empty />}
+        {checks.length > 0 ? (
+          <LatencyChart data={checks} domain={domain} gaps={gaps} />
+        ) : (
+          <Empty />
+        )}
       </Section>
 
       <Section title="Resource usage">
         {resources.length > 0 ? (
-          <ResourceChart data={resources} metrics={["cpu", "memory", "disk"]} />
+          <ResourceChart
+            data={resources}
+            metrics={["cpu", "memory", "disk"]}
+            domain={domain}
+            gaps={gaps}
+          />
         ) : (
           <Empty />
         )}

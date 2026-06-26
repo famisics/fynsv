@@ -35,8 +35,8 @@ export function isStale(iso: string, thresholdMs = 180000): boolean {
   return Date.now() - new Date(iso).getTime() > thresholdMs;
 }
 
-export function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleString([], {
+export function fmtTime(value: string | number): string {
+  return new Date(value).toLocaleString([], {
     month: "numeric",
     day: "numeric",
     hour: "2-digit",

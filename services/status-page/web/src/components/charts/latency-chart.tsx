@@ -4,20 +4,41 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { fmtTime } from "@/lib/format";
+import type { Gap } from "@/lib/history";
 import type { ServiceCheck } from "@/lib/types";
-import { CHART_AXIS_STROKE, CHART_GRID_STROKE, CHART_LABEL_STYLE, CHART_TICK, CHART_TOOLTIP_STYLE } from "./theme";
+import {
+  CHART_AXIS_STROKE,
+  CHART_GRID_STROKE,
+  CHART_LABEL_STYLE,
+  CHART_TICK,
+  CHART_TOOLTIP_STYLE,
+  GAP_FILL,
+  GAP_FILL_OPACITY,
+} from "./theme";
 
-export function LatencyChart({ data }: { data: ServiceCheck[] }) {
-  const points = data.map((c) => ({
-    time: c.checked_at,
-    latency: c.status === "down" ? null : Math.round(c.latency_ms ?? 0),
-  }));
+export function LatencyChart({
+  data,
+  domain,
+  gaps,
+}: {
+  data: ServiceCheck[];
+  domain: [number, number];
+  gaps: Gap[];
+}) {
+  const points = [
+    ...data.map((c) => ({
+      time: Date.parse(c.checked_at),
+      latency: c.status === "down" ? null : Math.round(c.latency_ms ?? 0),
+    })),
+    ...gaps.map((g) => ({ time: (g.start + g.end) / 2, latency: null })),
+  ].sort((a, b) => a.time - b.time);
 
   return (
     <ResponsiveContainer width="100%" height={220}>
@@ -32,12 +53,27 @@ export function LatencyChart({ data }: { data: ServiceCheck[] }) {
           </linearGradient>
         </defs>
         <CartesianGrid stroke={CHART_GRID_STROKE} vertical={false} />
+        {gaps.map((g) => (
+          <ReferenceArea
+            key={g.start}
+            x1={g.start}
+            x2={g.end}
+            fill={GAP_FILL}
+            fillOpacity={GAP_FILL_OPACITY}
+            stroke="none"
+            ifOverflow="hidden"
+          />
+        ))}
         <XAxis
           dataKey="time"
+          type="number"
+          scale="time"
+          domain={domain}
           tickFormatter={fmtTime}
           tick={CHART_TICK}
           stroke={CHART_AXIS_STROKE}
           minTickGap={48}
+          allowDataOverflow
         />
         <YAxis
           tick={CHART_TICK}
@@ -48,7 +84,7 @@ export function LatencyChart({ data }: { data: ServiceCheck[] }) {
         <Tooltip
           contentStyle={CHART_TOOLTIP_STYLE}
           labelStyle={CHART_LABEL_STYLE}
-          labelFormatter={(v) => fmtTime(v as string)}
+          labelFormatter={(v) => fmtTime(v as number)}
           formatter={(v) => [`${v}ms`, "Latency"]}
         />
         <Area
@@ -57,7 +93,7 @@ export function LatencyChart({ data }: { data: ServiceCheck[] }) {
           stroke="#22c55e"
           strokeWidth={2}
           fill="url(#latencyFill)"
-          connectNulls
+          connectNulls={false}
           dot={false}
         />
       </AreaChart>

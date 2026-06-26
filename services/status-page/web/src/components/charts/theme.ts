@@ -8,3 +8,5 @@ export const CHART_TOOLTIP_STYLE = {
   fontSize: 12,
 } as const;
 export const CHART_LABEL_STYLE = { color: "#a1a1aa" } as const;
+export const GAP_FILL = "#ef4444";
+export const GAP_FILL_OPACITY = 0.08;
