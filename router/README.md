@@ -11,7 +11,24 @@
 | Primary 回線 | BIGLOBE 光 (PPPoE + IPoE) | — |
 | Secondary 回線 | NCV (DHCP) | — |
 
-設定ファイルは [router1.config](./router1.config) (Primary) / [router2.config](./router2.config) (Secondary) に `show running-config` 出力をそのまま保管。
+設定ファイルは [router1.config](./router1.config) (Primary) / [router2.config](./router2.config) (Secondary) に `show running-config` 出力を保管 (機密情報はプレースホルダに置換済み)。
+
+## 設定ファイルの同期
+
+ルーターに設定変更を行ったら、その都度この覚書の config を最新化する。実機が正、リポジトリはそのスナップショット。
+
+1. 変更後の実機から最新の `show running-config` を取得する (config モードで実行。シリアルコンソール手順は claude-remote の `serial:ix2215` を参照)
+2. 出力を該当ファイル ([router1.config](./router1.config) / [router2.config](./router2.config)) に反映する
+3. **コミット前に、機密性の高い値をプレースホルダへ置換する** (実値は絶対にコミットしない):
+
+   | 実機の行 | 置換後のプレースホルダ |
+   |---|---|
+   | `username ... password hash <ハッシュ>` | `<ADMIN_PASSWORD_HASH>` |
+   | `authentication myname <PPPoE ユーザー名>` | `<PPPOE_USERNAME>` |
+   | `authentication password <PPPoE パスワード> ...` | `<PPPOE_PASSWORD>` |
+
+4. 上表以外にも、新たに pre-shared key・SNMP community・各種パスワード/ハッシュ・トークンが現れたら、内容が分かる名前のプレースホルダ (`<...>`) に置換する
+5. 置換漏れがないか差分を確認してからコミットする
 
 ## 物理接続
 
