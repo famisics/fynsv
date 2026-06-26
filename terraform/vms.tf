@@ -115,7 +115,7 @@ resource "proxmox_virtual_environment_vm" "arona" {
     trunks       = ""
     vlan_id      = 0
   }]
-  node_name           = "pve01"
+  node_name           = "pve02"
   on_boot             = true
   pool_id             = null
   protection          = false
