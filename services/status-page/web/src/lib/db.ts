@@ -78,7 +78,7 @@ export const getUptimeSummary = unstable_cache(
     const count = BUCKET_COUNTS[range];
     const bucketMs = windowMs / count;
 
-    const bucketExpr = sql<number>`(${snapshots.recordedAtMs} - ${start}) / ${bucketMs}`;
+    const bucketExpr = sql<number>`CAST((${snapshots.recordedAtMs} - ${start}) / ${bucketMs} AS INTEGER)`;
     const rows = await db
       .select({ bucket: bucketExpr, cnt: sql<number>`count(*)` })
       .from(snapshots)
