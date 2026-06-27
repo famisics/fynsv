@@ -53,6 +53,17 @@ parse_target() {
         TARGET_SERIAL_BAUD="$(_conf_get "$conf" baud)"
         [[ -n "$TARGET_SERIAL_BAUD" ]] || TARGET_SERIAL_BAUD="9600"
         [[ -n "$TARGET_SERIAL_DEVICE" ]] || die "device not set in $conf"
+        # device に glob を含む場合は実デバイスへ解決 (USB ポート由来のサフィックス差を吸収)。
+        if [[ "$TARGET_SERIAL_DEVICE" == *[*?[]* ]]; then
+          local matches=()
+          # shellcheck disable=SC2206
+          IFS=$'\n' matches=($(compgen -G "$TARGET_SERIAL_DEVICE" 2>/dev/null)) || true
+          case "${#matches[@]}" in
+            0) die "no serial device matched glob '$TARGET_SERIAL_DEVICE' (in $conf)" ;;
+            1) TARGET_SERIAL_DEVICE="${matches[0]}" ;;
+            *) die "serial device glob '$TARGET_SERIAL_DEVICE' is ambiguous: ${matches[*]}" ;;
+          esac
+        fi
       fi
       ;;
     *)
