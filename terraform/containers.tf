@@ -80,10 +80,13 @@ locals {
       vm_id       = 222
       target_node = "pve01"
       ip_address  = "192.168.2.210/24"
+      started     = false
     }
 
     kei = {
       vm_id       = 223
+      memory      = 4096
+      swap        = 4096
       target_node = "pve03"
       ip_address  = "192.168.2.211/24"
     }
