@@ -61,7 +61,7 @@ Next.js (App Router) アプリ。Turso を読み取り専用で参照する。Ve
 
 ### 必要な環境変数
 
-`.env.local.example` を `.env.local` にコピーして設定する。Vercel ではプロジェクトの環境変数に同じ値を設定する。
+`.env.example` を `.env` にコピーして設定する。Vercel ではプロジェクトの環境変数に同じ値を設定する。
 
 | 変数 | 用途 |
 | --- | --- |
