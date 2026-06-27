@@ -1,5 +1,5 @@
-import { drizzle } from "drizzle-orm/libsql";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 
 let _db: LibSQLDatabase<typeof schema> | null = null;

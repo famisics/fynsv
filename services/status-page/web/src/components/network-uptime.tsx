@@ -1,11 +1,6 @@
 import { fmtTime } from "@/lib/format";
 import type { TimeRange } from "@/lib/types";
-import {
-  computeUptime,
-  fmtUptime,
-  type UptimeSummary,
-  uptimeColor,
-} from "@/lib/uptime";
+import { fmtUptime, type UptimeSummary, uptimeColor } from "@/lib/uptime";
 
 const ROWS: { range: TimeRange; label: string }[] = [
   { range: "24h", label: "24h" },
@@ -14,13 +9,9 @@ const ROWS: { range: TimeRange; label: string }[] = [
 ];
 
 export function NetworkUptime({
-  timestamps,
-  firstEver,
-  now,
+  summaries,
 }: {
-  timestamps: number[];
-  firstEver: number | null;
-  now: number;
+  summaries: Record<TimeRange, UptimeSummary>;
 }) {
   return (
     <section className="mb-10 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
@@ -29,11 +20,7 @@ export function NetworkUptime({
       </h2>
       <div className="space-y-4">
         {ROWS.map(({ range, label }) => (
-          <UptimeRow
-            key={range}
-            label={label}
-            summary={computeUptime(timestamps, range, now, firstEver)}
-          />
+          <UptimeRow key={range} label={label} summary={summaries[range]} />
         ))}
       </div>
     </section>

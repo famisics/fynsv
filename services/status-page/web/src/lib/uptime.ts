@@ -20,8 +20,8 @@ export interface UptimeSummary {
   buckets: UptimeBucket[];
 }
 
-export function computeUptime(
-  timestampsMs: number[],
+export function computeUptimeFromCounts(
+  counts: number[],
   range: TimeRange,
   now: number,
   firstEverMs: number | null,
@@ -30,13 +30,6 @@ export function computeUptime(
   const start = now - windowMs;
   const count = BUCKET_COUNTS[range];
   const bucketMs = windowMs / count;
-
-  const counts = new Array<number>(count).fill(0);
-  for (const t of timestampsMs) {
-    if (t < start || t >= now) continue;
-    const idx = Math.min(count - 1, Math.floor((t - start) / bucketMs));
-    counts[idx]++;
-  }
 
   const buckets: UptimeBucket[] = [];
   let expectedTotal = 0;

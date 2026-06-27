@@ -1,5 +1,8 @@
-import { desc, lt, sql } from "drizzle-orm";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { desc, lt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
 import type { Service } from "../config";
 import * as schema from "./schema";
 import { serviceMeta, snapshots } from "./schema";
@@ -14,21 +17,13 @@ const db = drizzle({
 
 export const SCHEMA_VERSION = 1;
 
+const migrationsFolder = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../drizzle",
+);
+
 export async function initDb(): Promise<void> {
-  await db.run(sql`CREATE TABLE IF NOT EXISTS snapshots (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    schema_version INTEGER NOT NULL,
-    data TEXT NOT NULL,
-    recorded_at TEXT NOT NULL
-  )`);
-  await db.run(
-    sql`CREATE INDEX IF NOT EXISTS idx_snapshots_time ON snapshots(recorded_at)`,
-  );
-  await db.run(sql`CREATE TABLE IF NOT EXISTS service_meta (
-    version INTEGER PRIMARY KEY AUTOINCREMENT,
-    data TEXT NOT NULL,
-    created_at TEXT NOT NULL
-  )`);
+  await migrate(db, { migrationsFolder });
 }
 
 export async function syncServiceMeta(services: Service[]): Promise<void> {
@@ -61,6 +56,7 @@ export async function insertSnapshot(
     schemaVersion: SCHEMA_VERSION,
     data: JSON.stringify(data),
     recordedAt,
+    recordedAtMs: Date.parse(recordedAt),
   });
 }
 

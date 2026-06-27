@@ -2,8 +2,6 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getHistory } from "@/lib/db";
 import { parseRange } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ serviceId: string }> },

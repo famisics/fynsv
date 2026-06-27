@@ -4,7 +4,6 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
-  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -13,14 +12,13 @@ import {
 import { fmtTime } from "@/lib/format";
 import type { Gap } from "@/lib/history";
 import type { ServiceCheck } from "@/lib/types";
+import { gapAreas, TIME_X_AXIS_PROPS } from "./shared";
 import {
   CHART_AXIS_STROKE,
   CHART_GRID_STROKE,
   CHART_LABEL_STYLE,
   CHART_TICK,
   CHART_TOOLTIP_STYLE,
-  GAP_FILL,
-  GAP_FILL_OPACITY,
 } from "./theme";
 
 export function LatencyChart({
@@ -53,28 +51,8 @@ export function LatencyChart({
           </linearGradient>
         </defs>
         <CartesianGrid stroke={CHART_GRID_STROKE} vertical={false} />
-        {gaps.map((g) => (
-          <ReferenceArea
-            key={g.start}
-            x1={g.start}
-            x2={g.end}
-            fill={GAP_FILL}
-            fillOpacity={GAP_FILL_OPACITY}
-            stroke="none"
-            ifOverflow="hidden"
-          />
-        ))}
-        <XAxis
-          dataKey="time"
-          type="number"
-          scale="time"
-          domain={domain}
-          tickFormatter={fmtTime}
-          tick={CHART_TICK}
-          stroke={CHART_AXIS_STROKE}
-          minTickGap={48}
-          allowDataOverflow
-        />
+        {gapAreas(gaps)}
+        <XAxis {...TIME_X_AXIS_PROPS} domain={domain} />
         <YAxis
           tick={CHART_TICK}
           stroke={CHART_AXIS_STROKE}

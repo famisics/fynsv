@@ -12,23 +12,3 @@ export interface Gap {
   start: number;
   end: number;
 }
-
-export function findGaps(
-  timestampsMs: number[],
-  thresholdMs: number,
-  end?: number,
-): Gap[] {
-  const gaps: Gap[] = [];
-  for (let i = 1; i < timestampsMs.length; i++) {
-    if (timestampsMs[i] - timestampsMs[i - 1] > thresholdMs) {
-      gaps.push({ start: timestampsMs[i - 1], end: timestampsMs[i] });
-    }
-  }
-  if (end !== undefined && timestampsMs.length > 0) {
-    const last = timestampsMs[timestampsMs.length - 1];
-    if (end - last > thresholdMs) {
-      gaps.push({ start: last, end });
-    }
-  }
-  return gaps;
-}
