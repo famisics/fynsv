@@ -37,6 +37,7 @@ export function isStale(iso: string, thresholdMs = 180000): boolean {
 
 export function fmtTime(value: string | number): string {
   return new Date(value).toLocaleString([], {
+    timeZone: "Asia/Tokyo",
     month: "numeric",
     day: "numeric",
     hour: "2-digit",
