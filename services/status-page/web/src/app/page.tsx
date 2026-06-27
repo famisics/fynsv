@@ -1,17 +1,11 @@
 import { AutoRefresh } from "@/components/auto-refresh";
 import { NetworkUptime } from "@/components/network-uptime";
 import { ServiceCard } from "@/components/service-card";
-import {
-  getFirstSnapshotTime,
-  getLatestSnapshot,
-  getServiceMeta,
-  getSnapshotTimes,
-} from "@/lib/db";
+import { getLatestSnapshot, getServiceMeta, getUptimeSummary } from "@/lib/db";
 import { isStale, relativeTime } from "@/lib/format";
 import type { ResourceSnapshot, ServiceCategory } from "@/lib/types";
 
-export const revalidate = 30;
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 const CATEGORY_LABEL: Record<ServiceCategory, string> = {
   public: "Public",
@@ -19,14 +13,14 @@ const CATEGORY_LABEL: Record<ServiceCategory, string> = {
 };
 
 export default async function Home() {
-  const [{ checks, resources }, meta, snapshotTimes, firstEver] =
+  const [{ checks, resources }, meta, uptime24h, uptime7d, uptime30d] =
     await Promise.all([
       getLatestSnapshot(),
       getServiceMeta(),
-      getSnapshotTimes("30d"),
-      getFirstSnapshotTime(),
+      getUptimeSummary("24h"),
+      getUptimeSummary("7d"),
+      getUptimeSummary("30d"),
     ]);
-  const now = Date.now();
 
   const lookup = (serviceId: string) =>
     meta?.[serviceId] ?? { name: serviceId, category: "internal" as const };
@@ -68,9 +62,7 @@ export default async function Home() {
       )}
 
       <NetworkUptime
-        timestamps={snapshotTimes}
-        firstEver={firstEver}
-        now={now}
+        summaries={{ "24h": uptime24h, "7d": uptime7d, "30d": uptime30d }}
       />
 
       {checks.length === 0 && (

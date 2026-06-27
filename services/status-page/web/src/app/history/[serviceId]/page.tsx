@@ -3,21 +3,17 @@ import { LatencyChart } from "@/components/charts/latency-chart";
 import { ResourceChart } from "@/components/charts/resource-chart";
 import { RangeSelector } from "@/components/range-selector";
 import { StatusIndicator } from "@/components/status-indicator";
-import {
-  getHistory,
-  getLatestSnapshot,
-  getServiceMeta,
-} from "@/lib/db";
+import { getHistory, getLatestSnapshot, getServiceMeta } from "@/lib/db";
 import {
   formatBytes,
   formatLatency,
   percent,
   relativeTime,
 } from "@/lib/format";
-import { findGaps, GAP_THRESHOLD_MS, RANGE_MS } from "@/lib/history";
+import { RANGE_MS } from "@/lib/history";
 import { parseRange } from "@/lib/types";
 
-export const revalidate = 30;
+export const revalidate = 60;
 
 export default async function HistoryPage({
   params,
@@ -30,11 +26,12 @@ export default async function HistoryPage({
   const { range: rawRange } = await searchParams;
   const range = parseRange(rawRange);
 
-  const [allMeta, { checks, resources }, latestSnapshot] = await Promise.all([
-    getServiceMeta(),
-    getHistory(serviceId, range),
-    getLatestSnapshot(),
-  ]);
+  const [allMeta, { checks, resources, gaps }, latestSnapshot] =
+    await Promise.all([
+      getServiceMeta(),
+      getHistory(serviceId, range),
+      getLatestSnapshot(),
+    ]);
 
   const meta = allMeta?.[serviceId] ?? {
     name: serviceId,
@@ -46,11 +43,6 @@ export default async function HistoryPage({
 
   const end = Date.now();
   const domain: [number, number] = [end - RANGE_MS[range], end];
-  const gaps = findGaps(
-    checks.map((c) => Date.parse(c.checked_at)),
-    GAP_THRESHOLD_MS,
-    end,
-  );
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
