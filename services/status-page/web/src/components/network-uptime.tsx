@@ -55,11 +55,11 @@ function UptimeRow({
           {fmtUptime(summary.ratio)} uptime
         </span>
       </div>
-      <div className="flex h-7 gap-px">
+      <div className="flex h-7 gap-0.5">
         {summary.buckets.map((b) => (
           <div
             key={b.start}
-            className="flex-1 rounded-[1px]"
+            className="flex-1 rounded-xs"
             style={{ backgroundColor: uptimeColor(b.ratio) }}
             title={`${fmtTime(b.start)} – ${fmtTime(b.end)}: ${fmtUptime(b.ratio)}`}
           />
