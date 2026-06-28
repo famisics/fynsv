@@ -55,12 +55,36 @@
 
 | ルーター | 経路 | 種別 |
 |---|---|---|
-| router1 | `default → GigaEthernet1.1 (PPPoE)` | NAPT 抜け |
+| router1 | `default → GigaEthernet1.1 (PPPoE)` | 主回線 (NAPT 抜け) |
+| router1 | `default → 10.0.0.2 GigaEthernet0.0 metric 200` | 予備 (router2 経由) |
 | router1 | `192.168.2.0/24 → 10.0.0.2 GigaEthernet0.0` | LAN2 への静的ルート |
-| router2 | `default → GigaEthernet1.0 (NCV DHCP)` | NAPT 抜け |
+| router2 | `default → 10.0.0.1 GigaEthernet0.0` | 主回線 (router1 経由) |
+| router2 | `default → GigaEthernet1.0 metric 200 (NCV DHCP)` | 予備 (自回線 NAPT 抜け) |
 | router2 | `192.168.1.0/24 → 10.0.0.1 GigaEthernet0.0` | LAN1 への静的ルート |
 
 両ルーターで GE0.0 (`10.0.0.0/30`) には NAPT・フィルタを設定していないため、LAN1↔LAN2 は IPv4 で双方向に疎通する。
+
+### WAN フェイルオーバー
+
+router1 の PPPoE を網全体の主回線、router2 の NCV (DHCP) 回線を予備とする。通常時は両ルーターとも router1 の PPPoE 経由でインターネットに出る (router2 は GE0 経由で router1 へ抜ける)。router1 の PPPoE が落ちると、両ルーターとも router2 の DHCP 回線へ役割反転する。
+
+各ルーターが `watch-group wan-failover` (`network-monitor`) で監視し、`probe-mode traffic` でデフォルト経路を切離/復帰する。
+
+| ルーター | 監視先 | 監視経路 | 失敗時の動作 |
+|---|---|---|---|
+| router1 | `8.8.8.8` | `GigaEthernet1.1` (PPPoE) | 自 PPPoE のデフォルトを切離 → `10.0.0.2` (router2) 経由へ |
+| router2 | `1.1.1.1` | `GigaEthernet0.0` (router1 経由) | router1 経由デフォルトを切離 → 自 `GigaEthernet1.0` (DHCP) へ |
+
+#### sentinel-blackhole (発振防止)
+
+router2 のメトリクスを反転しただけでは、router1 PPPoE 断時に router1 が router2 へフェイルオーバーするため、router2 のプローブ (`1.1.1.1` via GE0) が router1↔router2 でヘアピンして成功/失敗を繰り返し**発振 (フラッピング)** する。
+
+これを防ぐため router1 に sentinel 経路を置く:
+
+- `ip route 1.1.1.1/32 GigaEthernet1.1` — PPPoE 稼働時は `1.1.1.1` を PPPoE 経由で転送 (router2 のプローブが成功)
+- `ip route 1.1.1.1/32 Null0.0 metric 200` — PPPoE 断時のみ有効化される floating な discard 経路。`1.1.1.1` を router2 へ送り返さず破棄するため、router2 のプローブがクリーンに失敗し自回線へ確定切替できる
+
+代償として router1 PPPoE 断中は router1 LAN (`192.168.1.0/24`) から `1.1.1.1` だけ到達できなくなる (監視用と割り切る)。
 
 ## IPv6 (Primary 系のみ)
 
