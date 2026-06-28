@@ -144,17 +144,17 @@ systemctl enable --now myapp.service
 
 ```sh
 # Remove previous versions of docker:
-apt remove $(dpkg --get-selections docker.io docker-compose docker-doc podman-docker containerd runc | cut -f1)
+sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-doc podman-docker containerd runc | cut -f1)
 
 # Add Docker's official GPG key:
-apt update
-apt install ca-certificates curl
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-chmod a+r /etc/apt/keyrings/docker.asc
+sudo apt update
+sudo apt install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 
 # Add the repository to Apt sources:
-tee /etc/apt/sources.list.d/docker.sources <<EOF
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
 Types: deb
 URIs: https://download.docker.com/linux/debian
 Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
@@ -164,10 +164,22 @@ Signed-By: /etc/apt/keyrings/docker.asc
 EOF
 
 # Update and install:
-apt update
-apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
 
 # Velify:
+docker run hello-world
+```
+
+sudo なしで `docker` を使えるようにするには、対象ユーザーを `docker` グループに追加する:
+
+```sh
+sudo usermod -aG docker "$USER"
+```
+
+グループの変更は再ログイン (または `newgrp docker`) で反映される。反映後は `sudo` なしで動作確認できる:
+
+```sh
 docker run hello-world
 ```
 
