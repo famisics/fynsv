@@ -87,6 +87,7 @@ locals {
       vm_id       = 223
       memory      = 4096
       swap        = 4096
+      disk_size   = 48
       target_node = "pve03"
       ip_address  = "192.168.2.211/24"
     }
