@@ -1,5 +1,5 @@
 import { getEnabledServices, services, type Service } from "./config";
-import { httpCheck, pingCheck, tcpCheck, type CheckResult } from "./checks";
+import { dockerCheck, httpCheck, pingCheck, tcpCheck, type CheckResult } from "./checks";
 import { fetchResourceStats, type ResourceStats } from "./proxmox";
 import { cleanOldRecords, initDb, insertSnapshot, syncServiceMeta } from "./db";
 
@@ -16,7 +16,7 @@ function runCheck(service: Service): Promise<CheckResult> {
     case "ping":
       return pingCheck(check.host!, check.timeoutMs);
     case "docker":
-      return Promise.resolve({ status: "down", error: "docker check not yet wired" });
+      return dockerCheck(check.container!, check.timeoutMs);
   }
 }
 
