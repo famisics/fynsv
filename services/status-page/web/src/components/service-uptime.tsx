@@ -14,7 +14,7 @@ export function ServiceUptime({
   summaries: Record<TimeRange, UptimeSummary>;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-1.5">
       {ROWS.map(({ range, label }) => (
         <UptimeRow key={range} label={label} summary={summaries[range]} />
       ))}
@@ -30,14 +30,9 @@ function UptimeRow({
   summary: UptimeSummary;
 }) {
   return (
-    <div>
-      <div className="mb-1.5 flex items-baseline justify-between text-xs">
-        <span className="text-zinc-400">{label}</span>
-        <span className="tabular-nums text-zinc-300">
-          {fmtUptime(summary.ratio)} uptime
-        </span>
-      </div>
-      <div className="flex h-7 gap-0.5">
+    <div className="flex items-center gap-2">
+      <span className="w-8 shrink-0 text-[11px] text-zinc-500">{label}</span>
+      <div className="flex h-5 flex-1 gap-0.5">
         {summary.buckets.map((b) => (
           <div
             key={b.start}
@@ -47,6 +42,9 @@ function UptimeRow({
           />
         ))}
       </div>
+      <span className="w-14 shrink-0 text-right text-[11px] tabular-nums text-zinc-400">
+        {fmtUptime(summary.ratio)}
+      </span>
     </div>
   );
 }
