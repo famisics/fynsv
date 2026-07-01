@@ -23,52 +23,49 @@ export function ServiceSection({
 }) {
   return (
     <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
-      <div className="flex items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
         <StatusIndicator status={check.status} />
         <span className="font-medium text-zinc-100">{meta.name}</span>
         <span className="text-xs text-zinc-500">
           {relativeTime(check.checked_at)}
           {check.error ? ` · ${check.error}` : ""}
         </span>
+
+        {latestResource && (
+          <span className="ml-auto flex flex-wrap items-center gap-x-3 text-xs tabular-nums text-zinc-400">
+            <StatItem
+              label="CPU"
+              value={`${Math.round(latestResource.cpu_percent ?? 0)}%`}
+            />
+            <StatItem
+              label="MEM"
+              value={`${formatBytes(latestResource.mem_used_bytes)} / ${formatBytes(latestResource.mem_total_bytes)}`}
+            />
+            <StatItem
+              label="DISK"
+              value={`${formatBytes(latestResource.disk_used_bytes)} / ${formatBytes(latestResource.disk_total_bytes)}`}
+            />
+            <StatItem
+              label="MEM%"
+              value={`${Math.round(percent(latestResource.mem_used_bytes, latestResource.mem_total_bytes) ?? 0)}%`}
+            />
+          </span>
+        )}
       </div>
 
-      {latestResource && (
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Stat
-            label="CPU"
-            value={`${Math.round(latestResource.cpu_percent ?? 0)}%`}
-          />
-          <Stat
-            label="Memory"
-            value={`${formatBytes(latestResource.mem_used_bytes)} / ${formatBytes(latestResource.mem_total_bytes)}`}
-          />
-          <Stat
-            label="Disk"
-            value={`${formatBytes(latestResource.disk_used_bytes)} / ${formatBytes(latestResource.disk_total_bytes)}`}
-          />
-          <Stat
-            label="Mem %"
-            value={`${Math.round(percent(latestResource.mem_used_bytes, latestResource.mem_total_bytes) ?? 0)}%`}
-          />
-        </div>
-      )}
-
-      <div className="mt-4">
+      <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[360px_1fr]">
         <ServiceUptime summaries={uptimeSummaries} />
+        <ServiceHistoryChart serviceId={check.service_id} />
       </div>
-
-      <ServiceHistoryChart serviceId={check.service_id} />
     </section>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function StatItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-      <div className="text-[10px] uppercase tracking-wide text-zinc-500">
-        {label}
-      </div>
-      <div className="mt-1 text-sm tabular-nums text-zinc-200">{value}</div>
-    </div>
+    <span>
+      <span className="text-zinc-600">{label}</span>{" "}
+      <span className="text-zinc-300">{value}</span>
+    </span>
   );
 }

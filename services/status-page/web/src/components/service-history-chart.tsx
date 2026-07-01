@@ -11,10 +11,7 @@ export function ServiceHistoryChart({ serviceId }: { serviceId: string }) {
   const domain: [number, number] = [end - RANGE_MS[range], end];
 
   return (
-    <div
-      className="mt-4 transition-opacity"
-      style={{ opacity: loading ? 0.5 : 1 }}
-    >
+    <div className="transition-opacity" style={{ opacity: loading ? 0.5 : 1 }}>
       {serviceResources.length > 0 ? (
         <ResourceChart
           data={serviceResources}
