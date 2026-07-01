@@ -3,11 +3,16 @@ services:
     build: .
     container_name: fynsv-health-checker
     restart: unless-stopped
+    # Docker ソケット読み取りのため root で実行する (swarm-gcal-sync の
+    # root-owned ファイル読み取りと同じ理由付け)
+    user: "0:0"
     ports:
       - "8090:8090"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     env_file: .env
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8090/healthz"]
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:8090/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
