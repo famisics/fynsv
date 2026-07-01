@@ -1,15 +1,9 @@
 import Link from "next/link";
-import { LatencyChart } from "@/components/charts/latency-chart";
 import { ResourceChart } from "@/components/charts/resource-chart";
 import { RangeSelector } from "@/components/range-selector";
 import { StatusIndicator } from "@/components/status-indicator";
 import { getHistory, getLatestSnapshot, getServiceMeta } from "@/lib/db";
-import {
-  formatBytes,
-  formatLatency,
-  percent,
-  relativeTime,
-} from "@/lib/format";
+import { formatBytes, percent, relativeTime } from "@/lib/format";
 import { RANGE_MS } from "@/lib/history";
 import { parseRange } from "@/lib/types";
 
@@ -26,12 +20,11 @@ export default async function HistoryPage({
   const { range: rawRange } = await searchParams;
   const range = parseRange(rawRange);
 
-  const [allMeta, { checks, resources, gaps }, latestSnapshot] =
-    await Promise.all([
-      getServiceMeta(),
-      getHistory(serviceId, range),
-      getLatestSnapshot(),
-    ]);
+  const [allMeta, { resources, gaps }, latestSnapshot] = await Promise.all([
+    getServiceMeta(),
+    getHistory(serviceId, range),
+    getLatestSnapshot(),
+  ]);
 
   const meta = allMeta?.[serviceId] ?? {
     name: serviceId,
@@ -62,7 +55,6 @@ export default async function HistoryPage({
             </h1>
             {latest && (
               <p className="text-sm text-zinc-500">
-                {formatLatency(latest.latency_ms)} ·{" "}
                 {relativeTime(latest.checked_at)}
                 {latest.error ? ` · ${latest.error}` : ""}
               </p>
@@ -92,14 +84,6 @@ export default async function HistoryPage({
           />
         </div>
       )}
-
-      <Section title="Response time">
-        {checks.length > 0 ? (
-          <LatencyChart data={checks} domain={domain} gaps={gaps} />
-        ) : (
-          <Empty />
-        )}
-      </Section>
 
       <Section title="Resource usage">
         {resources.length > 0 ? (

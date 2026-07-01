@@ -1,5 +1,5 @@
 import { getEnabledServices, services, type Service } from "./config";
-import { httpCheck, pingCheck, tcpCheck, type CheckResult } from "./checks";
+import { dockerCheck, httpCheck, pingCheck, tcpCheck, type CheckResult } from "./checks";
 import { fetchResourceStats, type ResourceStats } from "./proxmox";
 import { cleanOldRecords, initDb, insertSnapshot, syncServiceMeta } from "./db";
 
@@ -15,6 +15,8 @@ function runCheck(service: Service): Promise<CheckResult> {
       return tcpCheck(check.host!, check.port!, check.timeoutMs);
     case "ping":
       return pingCheck(check.host!, check.timeoutMs);
+    case "docker":
+      return dockerCheck(check.container!, check.timeoutMs);
   }
 }
 
@@ -39,12 +41,10 @@ async function tick(): Promise<void> {
       const r = checkResult.value;
       r.status === "up" ? up++ : down++;
       entry.status = r.status;
-      entry.latency_ms = r.latency_ms;
       entry.error = r.error ?? null;
     } else {
       down++;
       entry.status = "down";
-      entry.latency_ms = 0;
       entry.error = String(checkResult.reason);
     }
 

@@ -15,6 +15,7 @@ const token = process.env.PVE_API_TOKEN ?? "";
 export async function fetchResourceStats(
   service: Service,
 ): Promise<ResourceStats | null> {
+  if (!service.proxmox) return null;
   const { node, vmid, type } = service.proxmox;
   const ip = PVE_NODES[node];
   if (!ip) return null;

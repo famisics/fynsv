@@ -1,5 +1,5 @@
 export type Category = "public" | "internal";
-export type CheckType = "http" | "tcp" | "ping";
+export type CheckType = "http" | "tcp" | "ping" | "docker";
 export type GuestType = "lxc" | "qemu";
 
 export interface CheckConfig {
@@ -7,6 +7,7 @@ export interface CheckConfig {
   url?: string;
   host?: string;
   port?: number;
+  container?: string;
   timeoutMs: number;
   okStatuses?: number[];
 }
@@ -23,7 +24,7 @@ export interface Service {
   category: Category;
   enabled: boolean;
   check: CheckConfig;
-  proxmox: ProxmoxConfig;
+  proxmox?: ProxmoxConfig;
 }
 
 export const PVE_NODES: Record<string, string> = {
@@ -75,8 +76,29 @@ export const services: Service[] = [
     name: "Misskey-mixi2 Bridge",
     category: "internal",
     enabled: true,
-    check: { type: "ping", host: "192.168.2.207", timeoutMs: 3000 },
-    proxmox: { node: "pve02", vmid: 216, type: "lxc" },
+    check: {
+      type: "docker",
+      container: "misskey-mixi2-link-bridge-1",
+      timeoutMs: 3000,
+    },
+  },
+  {
+    id: "discord-bot",
+    name: "Discord Bot",
+    category: "internal",
+    enabled: true,
+    check: { type: "docker", container: "fun-council-bot-1", timeoutMs: 3000 },
+  },
+  {
+    id: "swarm-gcal-sync",
+    name: "Swarm-GCal Sync",
+    category: "internal",
+    enabled: true,
+    check: {
+      type: "docker",
+      container: "swarm-gcal-sync-sync-1",
+      timeoutMs: 3000,
+    },
   },
   {
     id: "coolify-cp",

@@ -1,6 +1,5 @@
 export interface CheckResult {
   status: "up" | "down";
-  latency_ms: number;
   error?: string;
 }
 
@@ -9,21 +8,18 @@ export async function httpCheck(
   timeoutMs: number,
   okStatuses?: number[],
 ): Promise<CheckResult> {
-  const start = performance.now();
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(timeoutMs),
       redirect: "manual",
     });
-    const latency_ms = performance.now() - start;
     if (okStatuses && !okStatuses.includes(res.status)) {
-      return { status: "down", latency_ms, error: `HTTP ${res.status}` };
+      return { status: "down", error: `HTTP ${res.status}` };
     }
-    return { status: "up", latency_ms };
+    return { status: "up" };
   } catch (e) {
     return {
       status: "down",
-      latency_ms: performance.now() - start,
       error: e instanceof Error ? e.message : String(e),
     };
   }
@@ -34,13 +30,12 @@ export async function tcpCheck(
   port: number,
   timeoutMs: number,
 ): Promise<CheckResult> {
-  const start = performance.now();
   return new Promise((resolve) => {
     let socket: { end(): void } | undefined;
 
     const timer = setTimeout(() => {
       socket?.end();
-      resolve({ status: "down", latency_ms: performance.now() - start, error: "timeout" });
+      resolve({ status: "down", error: "timeout" });
     }, timeoutMs);
 
     Bun.connect({
@@ -51,13 +46,12 @@ export async function tcpCheck(
           clearTimeout(timer);
           socket = s;
           s.end();
-          resolve({ status: "up", latency_ms: performance.now() - start });
+          resolve({ status: "up" });
         },
         error(_s, err) {
           clearTimeout(timer);
           resolve({
             status: "down",
-            latency_ms: performance.now() - start,
             error: err instanceof Error ? err.message : String(err),
           });
         },
@@ -68,7 +62,6 @@ export async function tcpCheck(
       clearTimeout(timer);
       resolve({
         status: "down",
-        latency_ms: performance.now() - start,
         error: err instanceof Error ? err.message : String(err),
       });
     });
@@ -79,16 +72,49 @@ export async function pingCheck(
   host: string,
   timeoutMs: number,
 ): Promise<CheckResult> {
-  const start = performance.now();
   const waitSeconds = Math.max(1, Math.ceil(timeoutMs / 1000));
   const proc = Bun.spawn(["ping", "-c", "1", "-W", String(waitSeconds), host], {
     stdout: "ignore",
     stderr: "ignore",
   });
   const code = await proc.exited;
-  const latency_ms = performance.now() - start;
   if (code === 0) {
-    return { status: "up", latency_ms };
+    return { status: "up" };
   }
-  return { status: "down", latency_ms, error: `ping exit ${code}` };
+  return { status: "down", error: `ping exit ${code}` };
+}
+
+export async function dockerCheck(
+  container: string,
+  timeoutMs: number,
+  socketPath = "/var/run/docker.sock",
+): Promise<CheckResult> {
+  try {
+    const res = await fetch(`http://localhost/containers/${container}/json`, {
+      unix: socketPath,
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (res.status === 404) {
+      return { status: "down", error: "no such container" };
+    }
+    if (!res.ok) {
+      return { status: "down", error: `Docker API HTTP ${res.status}` };
+    }
+    const body = (await res.json()) as {
+      State?: { Running?: boolean; Health?: { Status?: string } };
+    };
+    if (!body.State?.Running) {
+      return { status: "down", error: "container not running" };
+    }
+    const health = body.State.Health?.Status;
+    if (health && health !== "healthy") {
+      return { status: "down", error: `health status: ${health}` };
+    }
+    return { status: "up" };
+  } catch (e) {
+    return {
+      status: "down",
+      error: e instanceof Error ? e.message : String(e),
+    };
+  }
 }

@@ -14,11 +14,6 @@ export function percent(
   return (used / total) * 100;
 }
 
-export function formatLatency(ms: number | null): string {
-  if (ms === null) return "—";
-  return `${Math.round(ms)}ms`;
-}
-
 export function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const sec = Math.round(diff / 1000);
