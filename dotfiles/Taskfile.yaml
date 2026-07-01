@@ -7,6 +7,7 @@ tasks:
       - task --list
 
   deploy:
+    # example: task deploy HOST=kei
     desc: dotfiles を圧縮転送し、リモートで init.sh を適用する (HOST=<ssh host> 必須)
     # 冪等: 何度実行しても安全。転送は tar --overwrite で既存を上書きし、
     # init.sh 側は各ツールを command -v でガードして未導入時のみ入れる。
