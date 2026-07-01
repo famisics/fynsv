@@ -11,7 +11,7 @@ health-checker  →  Turso (libSQL)  →  web
 
 - **health-checker**: クラスタ内で常駐し、各サービスへのヘルスチェックと Proxmox API からのリソース取得を行い、結果を Turso に書き込む。
 - **Turso**: チェック結果とリソーススナップショットを JSON で保持する libSQL データベース (`snapshots` / `service_meta`)。ORM は Drizzle を使用。
-- **web**: Turso を読み取り、稼働状況・レイテンシ・リソース推移を表示する Next.js アプリ。Vercel にデプロイする。
+- **web**: Turso を読み取り、稼働状況・リソース推移を表示する Next.js アプリ。Vercel にデプロイする。
 
 監視対象サービスの一覧 (ID / 名前 / カテゴリ / チェック方法 / 対応する Proxmox ゲスト) は [`health-checker/src/config.ts`](./health-checker/src/config.ts) が正となる。
 
@@ -54,9 +54,9 @@ bun run dev    # --watch 付き
 
 Next.js (App Router) アプリ。Turso を読み取り専用で参照する。Vercel へのデプロイを前提とする。
 
-- トップページ: サービスをカテゴリ (public / internal) ごとにグループ表示。状態インジケータ・レイテンシ・CPU/メモリ使用率を表示し、30 秒ごとに自動更新する
+- トップページ: サービスをカテゴリ (public / internal) ごとにグループ表示。状態インジケータ・CPU/メモリ使用率を表示し、30 秒ごとに自動更新する
 - 直近のチェックが 3 分以上前の場合はデータが古い旨の警告を表示する
-- `/history/[serviceId]`: サービス単位の詳細。時間レンジ (24h / 7d / 30d) を切り替えてレイテンシとリソース使用量のチャートを表示する
+- `/history/[serviceId]`: サービス単位の詳細。時間レンジ (24h / 7d / 30d) を切り替えてリソース使用量のチャートを表示する
 - `/api/status`, `/api/history/[serviceId]`: 現在状況と履歴を返す JSON API
 
 ### 必要な環境変数
@@ -160,13 +160,14 @@ vercel --prod
 },
 ```
 
-チェック方式は 3 種類:
+チェック方式は 4 種類:
 
 | type | 必須パラメータ | 用途 |
 | --- | --- | --- |
 | `http` | `url`, `timeoutMs`, `okStatuses?` | HTTP エンドポイントがあるサービス。`okStatuses` 省略時は任意の HTTP レスポンスで up |
 | `tcp` | `host`, `port`, `timeoutMs` | ポートの到達性だけ確認（DB, Redis, SSH 等） |
 | `ping` | `host`, `timeoutMs` | inbound ポートがないサービス。ICMP でコンテナ生存のみ確認 |
+| `docker` | `container`, `timeoutMs` | ポート未公開で health-checker と同じ arona ホスト上に同居する Docker コンテナ。Docker ソケット経由でコンテナの running / health 状態を確認 |
 
 ### 反映
 
