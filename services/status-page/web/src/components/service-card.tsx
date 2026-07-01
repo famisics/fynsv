@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatLatency, percent } from "@/lib/format";
+import { percent } from "@/lib/format";
 import type {
   ResourceSnapshot,
   ServiceCategory,
@@ -46,14 +46,9 @@ export function ServiceCard({
       href={`/history/${check.service_id}`}
       className="block rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 transition-colors hover:border-zinc-700 hover:bg-zinc-900"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <StatusIndicator status={check.status} />
-          <span className="font-medium text-zinc-100">{meta.name}</span>
-        </div>
-        <span className="text-sm tabular-nums text-zinc-400">
-          {formatLatency(check.latency_ms)}
-        </span>
+      <div className="flex items-center gap-2.5">
+        <StatusIndicator status={check.status} />
+        <span className="font-medium text-zinc-100">{meta.name}</span>
       </div>
       <div className="mt-4 space-y-1.5">
         <Bar label="CPU" value={cpu} />
