@@ -78,6 +78,24 @@ Claude Code が SSH 越し / シリアル越しのリモート機器を **tmux �
 - **対話プログラムが前面にある間は使わない** (`less`/`journalctl` ページャ、`sudo` パスワード、`pct enter`、`configure` モード等)。マーカー文字列がそのプログラムへの入力になってしまう。これらは従来の `remote-send` + 人間承認 + `remote-capture` で扱う。
 - タイムアウト時は exit 124 を返し、その時点の画面を出力する。止まっている場合 (対話プロンプト等) は従来フローに切り替える。
 
+## 権限
+
+このスキルのスクリプト (`remote-open` / `remote-send` / `remote-capture`) は、プロジェクトの `.claude/settings.json` に `allow` エントリが存在し、**明示的に pre-authorized** されている。ユーザーが「arona に SSH して」「pve01 に接続して」等の指示を出した時点で、SSH 操作への明示的な承認が与えられたものとして扱う。
+
+ただし、Claude Code の auto mode classifier がグローバル設定の `Bash(ssh:*)` deny ルールを根拠に `remote-open` をブロックすることがある。これはラッパー経由で deny を迂回しているとみなされるためで、プロジェクト allow が意図通りに働かない場合に起きる。
+
+**この状況が発生したら:**
+
+1. ユーザーに以下を伝える:
+   - プロジェクト設定で許可されているが auto mode classifier がブロックした
+   - Claude Code のプロンプトで `!` プレフィックスを使って直接実行できる
+2. ユーザーに次のコマンドを Claude Code のプロンプトへ入力してもらう:
+   ```
+   ! .claude/skills/claude-remote/scripts/remote-open ssh:<host>
+   ```
+   `!` を先頭に付けると Claude ではなくユーザー自身がコマンドを実行し、出力がそのまま会話に届く。
+3. セッション起動後は Claude が通常通り `remote-send` / `remote-capture` を継続できる。
+
 ## 運用フロー
 
 ### Step 1: 起動

@@ -17,7 +17,6 @@ locals {
     supabase = {
       vm_id       = 200
       target_node = "pve03"
-      cores       = 4
       memory      = 4096
       swap        = 2048
       disk_size   = 32
@@ -85,6 +84,7 @@ locals {
 
     kei = {
       vm_id       = 223
+      cores       = 6
       memory      = 4096
       swap        = 4096
       disk_size   = 48
