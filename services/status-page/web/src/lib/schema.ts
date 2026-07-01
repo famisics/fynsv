@@ -66,37 +66,3 @@ export function parseSnapshot(row: SnapshotRow): {
   }
   return parseV1(row);
 }
-
-export function parseServiceRow(
-  row: { id: number; recordedAt: string; svc: string | null },
-  serviceId: string,
-): { check: ServiceCheck | null; resource: ResourceSnapshot | null } {
-  if (row.svc === null) return { check: null, resource: null };
-  const entry = JSON.parse(row.svc) as V1ServiceEntry;
-
-  const check: ServiceCheck = {
-    id: row.id,
-    service_id: serviceId,
-    status: entry.status as ServiceCheck["status"],
-    error: entry.error ?? null,
-    checked_at: row.recordedAt,
-  };
-
-  const resource: ResourceSnapshot | null =
-    entry.cpu_percent === undefined
-      ? null
-      : {
-          id: row.id,
-          service_id: serviceId,
-          cpu_percent: entry.cpu_percent ?? null,
-          mem_used_bytes: entry.mem_used_bytes ?? null,
-          mem_total_bytes: entry.mem_total_bytes ?? null,
-          disk_used_bytes: entry.disk_used_bytes ?? null,
-          disk_total_bytes: entry.disk_total_bytes ?? null,
-          net_in_bytes: entry.net_in_bytes ?? null,
-          net_out_bytes: entry.net_out_bytes ?? null,
-          recorded_at: row.recordedAt,
-        };
-
-  return { check, resource };
-}

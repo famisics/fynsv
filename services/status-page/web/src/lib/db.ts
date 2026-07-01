@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { getDb } from "@/db";
 import { serviceMeta, snapshots } from "@/db/schema";
 import { GAP_THRESHOLD_MS, type Gap, RANGE_MS } from "./history";
-import { parseServiceRow, parseSnapshot } from "./schema";
+import { parseSnapshot } from "./schema";
 import type {
   ResourceSnapshot,
   ServiceCategory,
@@ -69,47 +69,58 @@ const getFirstSnapshotTime = unstable_cache(
   { revalidate: CACHE_TTL, tags: [SNAPSHOTS_TAG] },
 );
 
-export const getUptimeSummary = unstable_cache(
-  async (range: TimeRange): Promise<UptimeSummary> => {
+export const getAllServicesUptime = unstable_cache(
+  async (range: TimeRange): Promise<Map<string, UptimeSummary>> => {
     const db = getDb();
     const windowMs = RANGE_MS[range];
     const now = Date.now();
     const start = now - windowMs;
-    const count = BUCKET_COUNTS[range];
-    const bucketMs = windowMs / count;
+    const bucketCount = BUCKET_COUNTS[range];
+    const bucketMs = windowMs / bucketCount;
 
-    const bucketExpr = sql<number>`CAST((${snapshots.recordedAtMs} - ${start}) / ${bucketMs} AS INTEGER)`;
     const rows = await db
-      .select({ bucket: bucketExpr, cnt: sql<number>`count(*)` })
+      .select()
       .from(snapshots)
       .where(
         and(
           gte(snapshots.recordedAtMs, start),
           lt(snapshots.recordedAtMs, now),
         ),
-      )
-      .groupBy(bucketExpr);
+      );
 
-    const counts = new Array<number>(count).fill(0);
-    for (const r of rows) {
-      const i = Number(r.bucket);
-      if (i >= 0 && i < count) counts[i] = Number(r.cnt);
+    const countsByService = new Map<string, number[]>();
+    for (const row of rows) {
+      const bucket = Math.floor((row.recordedAtMs - start) / bucketMs);
+      if (bucket < 0 || bucket >= bucketCount) continue;
+      for (const { service_id } of parseSnapshot(row).checks) {
+        let counts = countsByService.get(service_id);
+        if (!counts) {
+          counts = new Array<number>(bucketCount).fill(0);
+          countsByService.set(service_id, counts);
+        }
+        counts[bucket]++;
+      }
     }
 
     const firstEver = await getFirstSnapshotTime();
-    return computeUptimeFromCounts(counts, range, now, firstEver);
+    const result = new Map<string, UptimeSummary>();
+    for (const [serviceId, counts] of countsByService) {
+      result.set(
+        serviceId,
+        computeUptimeFromCounts(counts, range, now, firstEver),
+      );
+    }
+    return result;
   },
-  ["uptime-summary"],
+  ["all-services-uptime"],
   { revalidate: CACHE_TTL, tags: [SNAPSHOTS_TAG] },
 );
 
-export const getHistory = unstable_cache(
+export const getAllServicesHistory = unstable_cache(
   async (
-    serviceId: string,
     range: TimeRange,
   ): Promise<{
-    checks: ServiceCheck[];
-    resources: ResourceSnapshot[];
+    resources: Map<string, ResourceSnapshot[]>;
     gaps: Gap[];
   }> => {
     const db = getDb();
@@ -117,15 +128,8 @@ export const getHistory = unstable_cache(
     const start = now - RANGE_MS[range];
     const stride = range === "24h" ? 1 : range === "7d" ? 5 : 20;
 
-    const svcExpr = sql<
-      string | null
-    >`json_extract(${snapshots.data}, '$.services."' || ${serviceId} || '"')`;
     const rows = await db
-      .select({
-        id: snapshots.id,
-        recordedAt: snapshots.recordedAt,
-        svc: svcExpr,
-      })
+      .select()
       .from(snapshots)
       .where(
         and(
@@ -135,12 +139,17 @@ export const getHistory = unstable_cache(
       )
       .orderBy(asc(snapshots.recordedAtMs));
 
-    const checks: ServiceCheck[] = [];
-    const resources: ResourceSnapshot[] = [];
+    const resources = new Map<string, ResourceSnapshot[]>();
     for (const row of rows) {
-      const { check, resource } = parseServiceRow(row, serviceId);
-      if (check) checks.push(check);
-      if (resource) resources.push(resource);
+      const { resources: rowResources } = parseSnapshot(row);
+      for (const r of rowResources) {
+        let list = resources.get(r.service_id);
+        if (!list) {
+          list = [];
+          resources.set(r.service_id, list);
+        }
+        list.push(r);
+      }
     }
 
     const gapRows = await db.all<{ prev_ms: number; cur_ms: number }>(sql`
@@ -165,8 +174,8 @@ export const getHistory = unstable_cache(
       gaps.push({ start: lastRow[0].ms, end: now });
     }
 
-    return { checks, resources, gaps };
+    return { resources, gaps };
   },
-  ["history"],
+  ["all-services-history"],
   { revalidate: CACHE_TTL, tags: [SNAPSHOTS_TAG] },
 );
