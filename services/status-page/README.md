@@ -169,6 +169,12 @@ vercel --prod
 | `ping` | `host`, `timeoutMs` | inbound ポートがないサービス。ICMP でコンテナ生存のみ確認 |
 | `docker` | `container`, `timeoutMs` | ポート未公開で health-checker と同じ arona ホスト上に同居する Docker コンテナ。Docker ソケット経由でコンテナの running / health 状態を確認 |
 
+### Docker チェック型のセキュリティと命名規約
+
+health-checker の `compose.yaml` は `/var/run/docker.sock` を `:ro` マウントして `user: "0:0"` で実行する。`:ro` はソケットファイルの書き込みのみ制限し、Docker API 経由のあらゆる操作（コンテナ生成・exec・ホスト FS bind-mount など）は制限されない — つまり `docker.sock` アクセスは arona 上のホスト root 権限と等価である。コード上は現在 GET リクエストのみ発行している。
+
+また、監視対象の 3 コンテナ（`fun-council-bot-1`, `misskey-mixi2-link-bridge-1`, `swarm-gcal-sync-sync-1`）は Docker Compose のデフォルト命名規約（`{project}-{service}-{index}`）に従っている。サービスの compose.yaml をリネーム・再構成・複数化した場合、コンテナ名が変わり、`config.ts` の `container` フィールドも併せて更新する必要がある。更新しないと、チェックが "no such container" エラーで "down" を報告する。
+
 ### 反映
 
 ```sh
