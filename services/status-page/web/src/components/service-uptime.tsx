@@ -8,22 +8,17 @@ const ROWS: { range: TimeRange; label: string }[] = [
   { range: "30d", label: "30d" },
 ];
 
-export function NetworkUptime({
+export function ServiceUptime({
   summaries,
 }: {
   summaries: Record<TimeRange, UptimeSummary>;
 }) {
   return (
-    <section className="mb-10 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
-      <h2 className="mb-4 text-xs font-medium uppercase tracking-wider text-zinc-500">
-        Network
-      </h2>
-      <div className="space-y-4">
-        {ROWS.map(({ range, label }) => (
-          <UptimeRow key={range} label={label} summary={summaries[range]} />
-        ))}
-      </div>
-    </section>
+    <div className="space-y-4">
+      {ROWS.map(({ range, label }) => (
+        <UptimeRow key={range} label={label} summary={summaries[range]} />
+      ))}
+    </div>
   );
 }
 
