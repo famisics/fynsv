@@ -4,7 +4,6 @@ export interface ServiceCheck {
   id: number;
   service_id: string;
   status: ServiceStatus;
-  latency_ms: number | null;
   error: string | null;
   checked_at: string;
 }

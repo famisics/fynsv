@@ -6,7 +6,6 @@ type SnapshotRow = InferSelectModel<typeof snapshots>;
 
 interface V1ServiceEntry {
   status: string;
-  latency_ms: number;
   error: string | null;
   cpu_percent?: number;
   mem_used_bytes?: number;
@@ -34,7 +33,6 @@ function parseV1(row: SnapshotRow): {
       id: row.id,
       service_id: serviceId,
       status: entry.status as ServiceCheck["status"],
-      latency_ms: entry.latency_ms ?? null,
       error: entry.error ?? null,
       checked_at: row.recordedAt,
     });
@@ -80,7 +78,6 @@ export function parseServiceRow(
     id: row.id,
     service_id: serviceId,
     status: entry.status as ServiceCheck["status"],
-    latency_ms: entry.latency_ms ?? null,
     error: entry.error ?? null,
     checked_at: row.recordedAt,
   };
