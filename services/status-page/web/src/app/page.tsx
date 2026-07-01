@@ -1,9 +1,23 @@
 import { AutoRefresh } from "@/components/auto-refresh";
-import { NetworkUptime } from "@/components/network-uptime";
-import { ServiceCard } from "@/components/service-card";
-import { getLatestSnapshot, getServiceMeta, getUptimeSummary } from "@/lib/db";
+import {
+  GlobalRangeSelector,
+  HistoryProvider,
+} from "@/components/history-provider";
+import { ServiceSection } from "@/components/service-section";
+import {
+  getAllServicesHistory,
+  getAllServicesUptime,
+  getLatestSnapshot,
+  getServiceMeta,
+} from "@/lib/db";
 import { isStale, relativeTime } from "@/lib/format";
-import type { ResourceSnapshot, ServiceCategory } from "@/lib/types";
+import {
+  type ResourceSnapshot,
+  type ServiceCategory,
+  type TimeRange,
+  VALID_RANGES,
+} from "@/lib/types";
+import type { UptimeSummary } from "@/lib/uptime";
 
 export const revalidate = 60;
 
@@ -12,15 +26,23 @@ const CATEGORY_LABEL: Record<ServiceCategory, string> = {
   internal: "Internal",
 };
 
+const EMPTY_UPTIME: UptimeSummary = { ratio: null, buckets: [] };
+
 export default async function Home() {
-  const [{ checks, resources }, meta, uptime24h, uptime7d, uptime30d] =
-    await Promise.all([
-      getLatestSnapshot(),
-      getServiceMeta(),
-      getUptimeSummary("24h"),
-      getUptimeSummary("7d"),
-      getUptimeSummary("30d"),
-    ]);
+  const [
+    { checks, resources },
+    meta,
+    uptimeMaps,
+    { resources: history24h, gaps },
+  ] = await Promise.all([
+    getLatestSnapshot(),
+    getServiceMeta(),
+    Promise.all(VALID_RANGES.map((range) => getAllServicesUptime(range))),
+    getAllServicesHistory("24h"),
+  ]);
+  const uptimeByRange = new Map(
+    VALID_RANGES.map((range, i) => [range, uptimeMaps[i]]),
+  );
 
   const lookup = (serviceId: string) =>
     meta?.[serviceId] ?? { name: serviceId, category: "internal" as const };
@@ -28,6 +50,14 @@ export default async function Home() {
   const resourceById = new Map<string, ResourceSnapshot>(
     resources.map((r) => [r.service_id, r]),
   );
+
+  const uptimeFor = (serviceId: string): Record<TimeRange, UptimeSummary> =>
+    Object.fromEntries(
+      VALID_RANGES.map((range) => [
+        range,
+        uptimeByRange.get(range)?.get(serviceId) ?? EMPTY_UPTIME,
+      ]),
+    ) as Record<TimeRange, UptimeSummary>;
 
   const newest = checks.reduce<string | null>((acc, c) => {
     return acc === null || c.checked_at > acc ? c.checked_at : acc;
@@ -43,7 +73,7 @@ export default async function Home() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
+    <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
       <AutoRefresh />
       <header className="mb-8 flex items-baseline justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">FYNSV Status</h1>
@@ -61,33 +91,40 @@ export default async function Home() {
         </div>
       )}
 
-      <NetworkUptime
-        summaries={{ "24h": uptime24h, "7d": uptime7d, "30d": uptime30d }}
-      />
-
       {checks.length === 0 && (
         <p className="text-sm text-zinc-500">No check data available yet.</p>
       )}
 
-      {(["public", "internal"] as ServiceCategory[]).map((cat) =>
-        grouped[cat].length === 0 ? null : (
-          <section key={cat} className="mb-10">
-            <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-500">
-              {CATEGORY_LABEL[cat]}
-            </h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {grouped[cat].map((check) => (
-                <ServiceCard
-                  key={check.service_id}
-                  check={check}
-                  resource={resourceById.get(check.service_id) ?? null}
-                  meta={lookup(check.service_id)}
-                />
-              ))}
-            </div>
-          </section>
-        ),
-      )}
+      <HistoryProvider
+        initialRange="24h"
+        initialResources={history24h}
+        initialGaps={gaps}
+      >
+        <div className="mb-6 flex justify-end">
+          <GlobalRangeSelector />
+        </div>
+
+        {(["public", "internal"] as ServiceCategory[]).map((cat) =>
+          grouped[cat].length === 0 ? null : (
+            <section key={cat} className="mb-10">
+              <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                {CATEGORY_LABEL[cat]}
+              </h2>
+              <div className="space-y-6">
+                {grouped[cat].map((check) => (
+                  <ServiceSection
+                    key={check.service_id}
+                    check={check}
+                    latestResource={resourceById.get(check.service_id) ?? null}
+                    meta={lookup(check.service_id)}
+                    uptimeSummaries={uptimeFor(check.service_id)}
+                  />
+                ))}
+              </div>
+            </section>
+          ),
+        )}
+      </HistoryProvider>
     </main>
   );
 }
