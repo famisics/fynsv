@@ -15,6 +15,8 @@ function runCheck(service: Service): Promise<CheckResult> {
       return tcpCheck(check.host!, check.port!, check.timeoutMs);
     case "ping":
       return pingCheck(check.host!, check.timeoutMs);
+    case "docker":
+      return Promise.resolve({ status: "down", error: "docker check not yet wired" });
   }
 }
 
