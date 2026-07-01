@@ -39,12 +39,10 @@ async function tick(): Promise<void> {
       const r = checkResult.value;
       r.status === "up" ? up++ : down++;
       entry.status = r.status;
-      entry.latency_ms = r.latency_ms;
       entry.error = r.error ?? null;
     } else {
       down++;
       entry.status = "down";
-      entry.latency_ms = 0;
       entry.error = String(checkResult.reason);
     }
 
