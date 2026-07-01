@@ -21,8 +21,10 @@ tasks:
       - >-
         tar czhf - -C ~ --no-xattrs --no-mac-metadata --exclude='.git'
         .p10k.zsh
-        .claude/CLAUDE.md .claude/settings.json .claude/commands .claude/skills .claude/statusline.sh
+        .claude/CLAUDE.md .claude/commands .claude/skills .claude/statusline.sh
         .oh-my-zsh/oh-my-zsh.sh .oh-my-zsh/lib .oh-my-zsh/tools/check_for_upgrade.sh .oh-my-zsh/plugins/git .oh-my-zsh/custom/themes/powerlevel10k
         | ssh {{.HOST}} "tar xzf - --overwrite -C ~"
+      # settings.json は hooks を除去して転送する (notify-vscode/backup-usage.sh はコンテナに無く実行できないため)
+      - jq 'del(.hooks)' ~/.claude/settings.json | ssh {{.HOST}} "cat > ~/.claude/settings.json"
       # リモートで適用 (sudo を使うため TTY を割り当てる)
       - ssh -t {{.HOST}} "bash ~/init.sh"
