@@ -51,3 +51,35 @@ DB ごとに read-only ロールを発行し、ユーザーへの GRANT で read
 CREATE ROLE alice LOGIN PASSWORD '...';
 GRANT readonly_appdb TO alice;
 ```
+
+## 管理コンソール
+
+### pgAdmin 4
+
+PGDG の pgAdmin4 apt リポジトリ (`trixie`) から `pgadmin4-web` を導入し、Apache 上で web モードとして動作させている。
+
+```bash
+apt-get install -y gnupg
+curl -fsS https://www.pgadmin.org/static/packages_pgadmin_org.pub | gpg --dearmor -o /usr/share/keyrings/packages-pgadmin-org.gpg
+echo "deb [signed-by=/usr/share/keyrings/packages-pgadmin-org.gpg] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/trixie pgadmin4 main" > /etc/apt/sources.list.d/pgadmin4.list
+apt-get update && apt-get install -y pgadmin4-web
+PGADMIN_PLATFORM_TYPE=debian PGADMIN_SETUP_EMAIL=<email> PGADMIN_SETUP_PASSWORD=<password> /usr/pgadmin4/bin/setup-web.sh --yes
+```
+
+- アクセス: `http://192.168.2.212/pgadmin4`
+- ログインメール: `dev@uiro.dev`。パスワードはコンテナ内 `/root/.pgadmin_password` に保存
+
+### pgconsole
+
+[pgplex/pgconsole](https://github.com/pgplex/pgconsole) は GitHub Releases の単一バイナリではなく npm パッケージ (`@pgplex/pgconsole`, Node.js 20+ 必須) として配布されている。NodeSource から Node.js を導入し、npm でグローバルインストールしている。
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt-get install -y nodejs
+npm install -g @pgplex/pgconsole
+```
+
+設定は `/etc/pgconsole/config.toml`（TOML、`[[connections]]` に admin ロールの接続情報、`[[users]]` / `[[iam]]` でログインユーザーと権限を定義）。専用の非ログインシステムユーザー `pgconsole` が所有し、他ユーザーからは読めない。systemd unit (`/etc/systemd/system/pgconsole.service`) で `User=pgconsole` として常駐させている。
+
+- アクセス: `http://192.168.2.212:9876`
+- ログインメール: `dev@uiro.dev`。パスワードはコンテナ内 `/root/.pgconsole_password` に保存
