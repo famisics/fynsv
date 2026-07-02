@@ -4,8 +4,7 @@
 
 ## Tailscale から管理画面を開く
 
-- pgAdmin 4: `http://192.168.2.212/pgadmin4`（`arona` が LAN (`192.168.2.0/24`) をサブネットルーターとして代理公開しているため、コンテナ側の追加設定なしで tailnet 端末から LAN IP に直接アクセスできる）
-- pgconsole: `https://pgcs.hare-adelie.ts.net/`（**LAN IP 直アクセス不可**。pgconsole はログイン Cookie に `Secure` 属性がハードコードされており HTTPS でないとセッションが保存されないため、`arona` で `tailscale serve --service=svc:pgcs --bg --https=443 http://192.168.2.212:9876` を実行し HTTPS 終端している。Tailscale 管理コンソールでサービス `pgcs` の定義とホスト承認が必要）
+- DbGate: `http://192.168.2.212:3000`（`arona` が LAN (`192.168.2.0/24`) をサブネットルーターとして代理公開しているため、コンテナ側の追加設定なしで tailnet 端末から LAN IP に直接アクセスできる）
 
 ログイン情報は `.env`（`.env.example` を参照。リポジトリにはコミットしない）。
 
@@ -43,6 +42,17 @@ drizzle 等のクライアントからは以下の経路で接続できる。
 
 `<PW>` は admin ロールのパスワード。運用者に確認すること。
 
+## DB を作る
+
+`scripts/create-db.sh` に DB 名を渡すと、専用の LOGIN ロール (ランダムパスワード) と DB を作成し、`grants/readonly-role.sql` で対応する `readonly_<db>` ロールも合わせて用意したうえで、接続文字列を標準出力に返す。LAN/Tailscale 経由で `admin` ロールに接続するだけなので SSH は不要。
+
+```bash
+PGPASSWORD=<ADMIN_PG_PASSWORD> ./scripts/create-db.sh myapp
+# => postgres://myapp:<生成されたパスワード>@192.168.2.212:5432/myapp
+```
+
+同名の DB が既に存在する場合はエラーで中断する（上書き事故防止）。
+
 ## 権限管理
 
 DB ごとに read-only ロールを発行し、ユーザーへの GRANT で read 対象 DB を制御する運用。
@@ -62,39 +72,26 @@ GRANT readonly_appdb TO alice;
 
 ## 管理コンソール
 
-### pgAdmin 4
+### DbGate
 
-PGDG の pgAdmin4 apt リポジトリ (`trixie`) から `pgadmin4-web` を導入し、Apache 上で web モードとして動作させている。
-
-```bash
-apt-get install -y gnupg
-curl -fsS https://www.pgadmin.org/static/packages_pgadmin_org.pub | gpg --dearmor -o /usr/share/keyrings/packages-pgadmin-org.gpg
-echo "deb [signed-by=/usr/share/keyrings/packages-pgadmin-org.gpg] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/trixie pgadmin4 main" > /etc/apt/sources.list.d/pgadmin4.list
-apt-get update && apt-get install -y pgadmin4-web
-PGADMIN_PLATFORM_TYPE=debian PGADMIN_SETUP_EMAIL=<email> PGADMIN_SETUP_PASSWORD=<password> /usr/pgadmin4/bin/setup-web.sh --yes
-```
-
-- アクセス: `http://192.168.2.212/pgadmin4`
-- ログインメール: `dev@uiro.dev`。パスワードはコンテナ内 `/root/.pgadmin_password` に保存
-
-### pgconsole
-
-[pgplex/pgconsole](https://github.com/pgplex/pgconsole) は GitHub Releases の単一バイナリではなく npm パッケージ (`@pgplex/pgconsole`, Node.js 20+ 必須) として配布されている。NodeSource から Node.js を導入し、npm でグローバルインストールしている。
+テーブル一覧の閲覧・検索・1 行単位の編集など phpMyAdmin 相当の操作を Web UI から行える。Docker コンテナとして常設している。
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-apt-get install -y nodejs
-npm install -g @pgplex/pgconsole
+docker compose up -d
 ```
 
-設定は `/etc/pgconsole/config.toml`（TOML、`[[connections]]` に admin ロールの接続情報、`[[users]]` / `[[iam]]` でログインユーザーと権限を定義）。専用の非ログインシステムユーザー `pgconsole` が所有し、他ユーザーからは読めない。systemd unit (`/etc/systemd/system/pgconsole.service`) で `User=pgconsole` として常駐させている。
+`docker-compose.yml` は `dbgate/dbgate` イメージをポート 3000 で起動し、`.env` の `DBGATE_LOGIN` / `DBGATE_PASSWORD` でログイン認証をかける。初回起動後、UI から `admin` ロールで PostgreSQL への接続を1つ登録する（host は同一コンテナ内なので `127.0.0.1` または `192.168.2.212`）。
 
-`[[connections]]` は 1 エントリ = 1 データベース (`database` は必須の単一 DB 名) で、pgAdmin のようにサーバー単位でデータベース一覧を自動列挙する設計ではない。新しい DB を作成したら `config.toml` に対応する `[[connections]]` (+ 必要なら `[[iam]]`) を追記し `systemctl restart pgconsole` する。
+- アクセス: `http://192.168.2.212:3000`
+- ログイン情報は `.env` の `DBGATE_LOGIN` / `DBGATE_PASSWORD`
 
-pgconsole v1.2.2 はログイン Cookie に `Secure` 属性がハードコードされており（設定で無効化不可)、HTTP 経由だとログインしてもセッションが保存されず画面が遷移しない。`arona` の `tailscale serve --service=svc:pgcs` で HTTPS 終端した `https://pgcs.hare-adelie.ts.net/` からアクセスする。
+### テーブルをもっと快適に触りたい場合
 
-- アクセス: `https://pgcs.hare-adelie.ts.net/`（`http://192.168.2.212:9876` への直接アクセスはログイン後に画面が遷移しないため非推奨）
-- ログインメール: `dev@uiro.dev`。パスワードはコンテナ内 `/root/.pgconsole_password` に保存
+drizzle を使っているプロジェクトなら、手元の PC から接続文字列付きで Drizzle Studio をローカル起動する方法もある。サーバー側には何もインストールしない（公式に VPS 等でのリモート常設運用は非対応と明記されているため、常設サービスの代替にはしていない）。
+
+```bash
+DATABASE_URL="postgres://..." npx drizzle-kit studio
+```
 
 ## cloudflared に Public Hostname を追加
 
