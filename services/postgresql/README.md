@@ -89,6 +89,8 @@ npm install -g @pgplex/pgconsole
 
 設定は `/etc/pgconsole/config.toml`（TOML、`[[connections]]` に admin ロールの接続情報、`[[users]]` / `[[iam]]` でログインユーザーと権限を定義）。専用の非ログインシステムユーザー `pgconsole` が所有し、他ユーザーからは読めない。systemd unit (`/etc/systemd/system/pgconsole.service`) で `User=pgconsole` として常駐させている。
 
+`[[connections]]` は 1 エントリ = 1 データベース (`database` は必須の単一 DB 名) で、pgAdmin のようにサーバー単位でデータベース一覧を自動列挙する設計ではない。新しい DB を作成したら `config.toml` に対応する `[[connections]]` (+ 必要なら `[[iam]]`) を追記し `systemctl restart pgconsole` する。
+
 pgconsole v1.2.2 はログイン Cookie に `Secure` 属性がハードコードされており（設定で無効化不可)、HTTP 経由だとログインしてもセッションが保存されず画面が遷移しない。`arona` の `tailscale serve --service=svc:pgcs` で HTTPS 終端した `https://pgcs.hare-adelie.ts.net/` からアクセスする。
 
 - アクセス: `https://pgcs.hare-adelie.ts.net/`（`http://192.168.2.212:9876` への直接アクセスはログイン後に画面が遷移しないため非推奨）
