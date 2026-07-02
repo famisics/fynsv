@@ -2,6 +2,15 @@
 
 汎用 PostgreSQL 17 サーバー。VMID / IP / リソース量は `terraform/containers.tf` の `postgresql` エントリが正。
 
+## Tailscale から管理画面を開く
+
+`arona` が LAN (`192.168.2.0/24`) をサブネットルーターとして代理公開しているため、コンテナ側での追加設定は不要。tailnet に参加した端末から LAN IP に直接アクセスできる。
+
+- pgAdmin 4: `http://192.168.2.212/pgadmin4`
+- pgconsole: `http://192.168.2.212:9876`
+
+ログイン情報は `.env`（`.env.example` を参照。リポジトリにはコミットしない）。
+
 ## 構築
 
 PGDG リポジトリから PostgreSQL 17 を導入している。
