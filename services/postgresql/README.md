@@ -4,10 +4,8 @@
 
 ## Tailscale から管理画面を開く
 
-`arona` が LAN (`192.168.2.0/24`) をサブネットルーターとして代理公開しているため、コンテナ側での追加設定は不要。tailnet に参加した端末から LAN IP に直接アクセスできる。
-
-- pgAdmin 4: `http://192.168.2.212/pgadmin4`
-- pgconsole: `http://192.168.2.212:9876`
+- pgAdmin 4: `http://192.168.2.212/pgadmin4`（`arona` が LAN (`192.168.2.0/24`) をサブネットルーターとして代理公開しているため、コンテナ側の追加設定なしで tailnet 端末から LAN IP に直接アクセスできる）
+- pgconsole: `https://pgcs.hare-adelie.ts.net/`（**LAN IP 直アクセス不可**。pgconsole はログイン Cookie に `Secure` 属性がハードコードされており HTTPS でないとセッションが保存されないため、`arona` で `tailscale serve --service=svc:pgcs --bg --https=443 http://192.168.2.212:9876` を実行し HTTPS 終端している。Tailscale 管理コンソールでサービス `pgcs` の定義とホスト承認が必要）
 
 ログイン情報は `.env`（`.env.example` を参照。リポジトリにはコミットしない）。
 
@@ -91,7 +89,9 @@ npm install -g @pgplex/pgconsole
 
 設定は `/etc/pgconsole/config.toml`（TOML、`[[connections]]` に admin ロールの接続情報、`[[users]]` / `[[iam]]` でログインユーザーと権限を定義）。専用の非ログインシステムユーザー `pgconsole` が所有し、他ユーザーからは読めない。systemd unit (`/etc/systemd/system/pgconsole.service`) で `User=pgconsole` として常駐させている。
 
-- アクセス: `http://192.168.2.212:9876`
+pgconsole v1.2.2 はログイン Cookie に `Secure` 属性がハードコードされており（設定で無効化不可)、HTTP 経由だとログインしてもセッションが保存されず画面が遷移しない。`arona` の `tailscale serve --service=svc:pgcs` で HTTPS 終端した `https://pgcs.hare-adelie.ts.net/` からアクセスする。
+
+- アクセス: `https://pgcs.hare-adelie.ts.net/`（`http://192.168.2.212:9876` への直接アクセスはログイン後に画面が遷移しないため非推奨）
 - ログインメール: `dev@uiro.dev`。パスワードはコンテナ内 `/root/.pgconsole_password` に保存
 
 ## cloudflared に Public Hostname を追加
