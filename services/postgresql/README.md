@@ -32,6 +32,7 @@ drizzle 等のクライアントからは以下の経路で接続できる。
 
 - **LAN**: `postgres://admin:<PW>@192.168.2.212:5432/postgres`（`terraform/containers.tf` の IP を参照）
 - **Tailscale**: `arona` がサブネットルーターとして LAN (`192.168.2.0/24`) を代理公開しているため、tailnet 上のクライアントからは同じ LAN IP でそのまま到達できる
+- **外部 (cloudflared)**: `psql.uiro.dev`。`cloudflared access tcp --hostname psql.uiro.dev --url localhost:15432` でローカルポートに転送してから接続する (下記「cloudflared に Public Hostname を追加」参照)
 
 `<PW>` は admin ロールのパスワード。運用者に確認すること。
 
@@ -83,3 +84,23 @@ npm install -g @pgplex/pgconsole
 
 - アクセス: `http://192.168.2.212:9876`
 - ログインメール: `dev@uiro.dev`。パスワードはコンテナ内 `/root/.pgconsole_password` に保存
+
+## cloudflared に Public Hostname を追加
+
+`arona` の cloudflared は **token 方式 (remote-managed tunnel)** で動いており、ingress はすべて Cloudflare Zero Trust ダッシュボードで管理する ([misskey/README.md](../misskey/README.md) §5 と同じ。コンテナ側に cloudflared は入れない)。PostgreSQL は HTTP ではなく生 TCP なので、Service Type は `TCP` を選ぶ。
+
+### 実行場所: Cloudflare Zero Trust ダッシュボード
+
+1. **Zero Trust > Networks > Tunnels** → arona のトンネル → **Configure** > **Public Hostnames** > **Add a public hostname**
+   - **Subdomain**: `psql`
+   - **Domain**: 該当の Cloudflare ドメイン
+   - **Service > Type**: `TCP`
+   - **Service > URL**: `192.168.2.212:5432`
+2. Save。`psql.uiro.dev` の CNAME が自動生成される。
+
+### 動作確認 (作業マシンから)
+
+```sh
+cloudflared access tcp --hostname psql.uiro.dev --url localhost:15432 &
+psql "postgres://admin:<PW>@localhost:15432/postgres" -c 'select 1;'
+```

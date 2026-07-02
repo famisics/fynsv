@@ -215,42 +215,16 @@ git commit -m "docs: pgconsole の構築手順を追記"
 ### Task 6: cloudflared — psql.uiro.dev
 
 **Interfaces:**
-- Produces: `psql.uiro.dev` → 192.168.2.212:5432 の Cloudflare Tunnel (クライアントは `cloudflared access tcp` で接続)
+- Produces: `psql.uiro.dev` → 192.168.2.212:5432 (`arona` の既存 cloudflared 経由。クライアントは `cloudflared access tcp` で接続)
 
-- [ ] **Step 1: cloudflared インストール** (コンテナ内)
+`arona` の cloudflared は token 方式 (remote-managed tunnel) で稼働しており、コンテナ側に cloudflared を入れる必要はない ([misskey/README.md](../../../services/misskey/README.md) §5、[obsidian-livesync/README.md](../../../services/obsidian-livesync/README.md) §3 と同じ方式)。ingress は Cloudflare Zero Trust ダッシュボードで管理する。
 
-```bash
-curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg -o /usr/share/keyrings/cloudflare-main.gpg
-echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" > /etc/apt/sources.list.d/cloudflared.list
-apt-get update && apt-get install -y cloudflared
-```
+- [ ] **Step 1: Public Hostname を追加** — 実行場所: Cloudflare Zero Trust ダッシュボード
+  - **Zero Trust > Networks > Tunnels** → arona のトンネル → **Configure** > **Public Hostnames** > **Add a public hostname**
+  - Subdomain: `psql` / Domain: 該当ドメイン / Service > Type: `TCP` / Service > URL: `192.168.2.212:5432`
+  - Save すると `psql.uiro.dev` の CNAME が自動生成される
 
-- [ ] **Step 2: トンネル作成** — `cloudflared tunnel login` は対話認証が必要。ユーザーにブラウザ認証を依頼して停止・待機。
-
-```bash
-cloudflared tunnel login
-cloudflared tunnel create postgresql
-cloudflared tunnel route dns postgresql psql.uiro.dev
-```
-
-- [ ] **Step 3: config 作成と service 化**
-
-```yaml
-# /etc/cloudflared/config.yml
-tunnel: <tunnel-id>
-credentials-file: /root/.cloudflared/<tunnel-id>.json
-ingress:
-  - hostname: psql.uiro.dev
-    service: tcp://localhost:5432
-  - service: http_status:404
-```
-
-```bash
-cloudflared service install
-systemctl enable --now cloudflared
-```
-
-- [ ] **Step 4: 検証** (作業マシンから)
+- [ ] **Step 2: 検証** (作業マシンから)
 
 ```bash
 cloudflared access tcp --hostname psql.uiro.dev --url localhost:15432 &
@@ -258,7 +232,7 @@ psql "postgres://admin:<PW>@localhost:15432/postgres" -c 'select 1;'
 ```
 Expected: `1`
 
-- [ ] **Step 5: README に cloudflared 節を追記して Commit**
+- [ ] **Step 3: README に cloudflared 節を追記して Commit**
 
 ```bash
 git add services/postgresql/README.md
