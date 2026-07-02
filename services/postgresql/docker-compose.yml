@@ -1,0 +1,15 @@
+services:
+  dbgate:
+    image: dbgate/dbgate
+    container_name: dbgate
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      LOGIN: ${DBGATE_LOGIN}
+      PASSWORD: ${DBGATE_PASSWORD}
+    volumes:
+      - dbgate-data:/root/.dbgate
+
+volumes:
+  dbgate-data:
