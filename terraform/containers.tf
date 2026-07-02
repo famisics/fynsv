@@ -91,6 +91,14 @@ locals {
       target_node = "pve03"
       ip_address  = "192.168.2.211/24"
     }
+
+    postgresql = {
+      vm_id       = 214
+      target_node = "pve01"
+      memory      = 4096
+      disk_size   = 32
+      ip_address  = "192.168.2.212/24"
+    }
   }
 
   container_defaults = {
