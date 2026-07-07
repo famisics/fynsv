@@ -2,6 +2,7 @@ import { getEnabledServices, services, type Service } from "./config";
 import { dockerCheck, httpCheck, pingCheck, tcpCheck, type CheckResult } from "./checks";
 import { fetchResourceStats, type ResourceStats } from "./proxmox";
 import { cleanOldRecords, initDb, insertSnapshot, syncServiceMeta } from "./db";
+import { backfillRollups, bucketStart, ROLLUP_BUCKET_MS, rollupRange } from "./rollup";
 
 const PORT = 8090;
 const INTERVAL_MS = 60_000;
@@ -57,6 +58,10 @@ async function tick(): Promise<void> {
   });
 
   await insertSnapshot({ services: serviceData }, now);
+
+  const bucket = bucketStart(Date.parse(now));
+  await rollupRange(bucket, bucket + ROLLUP_BUCKET_MS);
+
   console.log(`[${now}] checked ${services.length} services: ${up} up, ${down} down`);
 }
 
@@ -81,6 +86,7 @@ async function loop(): Promise<void> {
     }
   }
   await syncServiceMeta(services);
+  await backfillRollups().catch((e) => console.error("rollup backfill failed:", e));
   console.log("db initialized, starting check loop");
   while (true) {
     await tick().catch((e) => console.error("tick failed:", e));
