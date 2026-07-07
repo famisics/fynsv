@@ -13,5 +13,5 @@ tasks:
   deploy:fun-council:
     desc: discord-bot/fun-council を arona に転送してビルド・再起動する
     cmds:
-      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata go.mod go.sum shared fun-council/Dockerfile fun-council/compose.yml fun-council/main.go fun-council/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
+      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata go.mod go.sum shared fun-council/Dockerfile fun-council/compose.yml fun-council/main.go fun-council/rolesync.go fun-council/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
       - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/fun-council && docker compose up -d --build"
