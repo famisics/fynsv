@@ -4,11 +4,13 @@ import { createContext, useContext, useState, useTransition } from "react";
 import { RangeSelector } from "@/components/range-selector";
 import type { Gap } from "@/lib/history";
 import type { ResourceSnapshot, TimeRange } from "@/lib/types";
+import type { UptimeSummary } from "@/lib/uptime";
 
 interface HistoryContextValue {
   range: TimeRange;
   resources: Map<string, ResourceSnapshot[]>;
   gaps: Gap[];
+  uptime: Record<string, UptimeSummary>;
   loading: boolean;
   setRange: (range: TimeRange) => void;
 }
@@ -19,16 +21,21 @@ export function HistoryProvider({
   initialRange,
   initialResources,
   initialGaps,
+  initialUptime,
   children,
 }: {
   initialRange: TimeRange;
-  initialResources: Map<string, ResourceSnapshot[]>;
+  initialResources: Record<string, ResourceSnapshot[]>;
   initialGaps: Gap[];
+  initialUptime: Record<string, UptimeSummary>;
   children: React.ReactNode;
 }) {
   const [range, setRangeState] = useState(initialRange);
-  const [resources, setResources] = useState(initialResources);
+  const [resources, setResources] = useState(
+    () => new Map(Object.entries(initialResources)),
+  );
   const [gaps, setGaps] = useState(initialGaps);
+  const [uptime, setUptime] = useState(initialUptime);
   const [isPending, startTransition] = useTransition();
 
   function setRange(next: TimeRange) {
@@ -38,13 +45,14 @@ export function HistoryProvider({
       const json = await res.json();
       setResources(new Map(Object.entries(json.resources)));
       setGaps(json.gaps);
+      setUptime(json.uptime);
       setRangeState(next);
     });
   }
 
   return (
     <HistoryContext.Provider
-      value={{ range, resources, gaps, loading: isPending, setRange }}
+      value={{ range, resources, gaps, uptime, loading: isPending, setRange }}
     >
       {children}
     </HistoryContext.Provider>
