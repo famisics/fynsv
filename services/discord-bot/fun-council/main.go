@@ -28,6 +28,8 @@ func main() {
   }
   defer dg.Close()
 
+  startRoleSync(dg)
+
   existing, _ := dg.ApplicationCommands(dg.State.User.ID, "")
   registered := map[string]bool{reminder.Command.Name: true}
   for _, c := range existing {
