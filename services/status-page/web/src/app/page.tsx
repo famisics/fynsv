@@ -11,13 +11,7 @@ import {
   getServiceMeta,
 } from "@/lib/db";
 import { isStale, relativeTime } from "@/lib/format";
-import {
-  type ResourceSnapshot,
-  type ServiceCategory,
-  type TimeRange,
-  VALID_RANGES,
-} from "@/lib/types";
-import type { UptimeSummary } from "@/lib/uptime";
+import type { ResourceSnapshot, ServiceCategory } from "@/lib/types";
 
 export const revalidate = 60;
 
@@ -26,23 +20,18 @@ const CATEGORY_LABEL: Record<ServiceCategory, string> = {
   internal: "Internal",
 };
 
-const EMPTY_UPTIME: UptimeSummary = { ratio: null, buckets: [] };
-
 export default async function Home() {
   const [
     { checks, resources },
     meta,
-    uptimeMaps,
+    uptime24h,
     { resources: history24h, gaps },
   ] = await Promise.all([
     getLatestSnapshot(),
     getServiceMeta(),
-    Promise.all(VALID_RANGES.map((range) => getAllServicesUptime(range))),
+    getAllServicesUptime("24h"),
     getAllServicesHistory("24h"),
   ]);
-  const uptimeByRange = new Map(
-    VALID_RANGES.map((range, i) => [range, uptimeMaps[i]]),
-  );
 
   const lookup = (serviceId: string) =>
     meta?.[serviceId] ?? { name: serviceId, category: "internal" as const };
@@ -50,14 +39,6 @@ export default async function Home() {
   const resourceById = new Map<string, ResourceSnapshot>(
     resources.map((r) => [r.service_id, r]),
   );
-
-  const uptimeFor = (serviceId: string): Record<TimeRange, UptimeSummary> =>
-    Object.fromEntries(
-      VALID_RANGES.map((range) => [
-        range,
-        uptimeByRange.get(range)?.get(serviceId) ?? EMPTY_UPTIME,
-      ]),
-    ) as Record<TimeRange, UptimeSummary>;
 
   const newest = checks.reduce<string | null>((acc, c) => {
     return acc === null || c.checked_at > acc ? c.checked_at : acc;
@@ -99,6 +80,7 @@ export default async function Home() {
         initialRange="24h"
         initialResources={history24h}
         initialGaps={gaps}
+        initialUptime={uptime24h}
       >
         <div className="mb-6 flex justify-end">
           <GlobalRangeSelector />
@@ -117,7 +99,6 @@ export default async function Home() {
                     check={check}
                     latestResource={resourceById.get(check.service_id) ?? null}
                     meta={lookup(check.service_id)}
-                    uptimeSummaries={uptimeFor(check.service_id)}
                   />
                 ))}
               </div>

@@ -6,20 +6,16 @@ import type {
   ResourceSnapshot,
   ServiceCategory,
   ServiceCheck,
-  TimeRange,
 } from "@/lib/types";
-import type { UptimeSummary } from "@/lib/uptime";
 
 export function ServiceSection({
   check,
   latestResource,
   meta,
-  uptimeSummaries,
 }: {
   check: ServiceCheck;
   latestResource: ResourceSnapshot | null;
   meta: { name: string; category: ServiceCategory };
-  uptimeSummaries: Record<TimeRange, UptimeSummary>;
 }) {
   return (
     <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
@@ -53,8 +49,8 @@ export function ServiceSection({
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[360px_1fr]">
-        <ServiceUptime summaries={uptimeSummaries} />
+      <div className="mt-4 space-y-4">
+        <ServiceUptime serviceId={check.service_id} />
         <ServiceHistoryChart serviceId={check.service_id} />
       </div>
     </section>

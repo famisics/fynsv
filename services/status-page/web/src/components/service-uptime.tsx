@@ -1,37 +1,19 @@
+"use client";
+
 import { fmtTime } from "@/lib/format";
-import type { TimeRange } from "@/lib/types";
-import { fmtUptime, type UptimeSummary, uptimeColor } from "@/lib/uptime";
+import { fmtUptime, uptimeColor } from "@/lib/uptime";
+import { useHistory } from "./history-provider";
 
-const ROWS: { range: TimeRange; label: string }[] = [
-  { range: "24h", label: "24h" },
-  { range: "7d", label: "7d" },
-  { range: "30d", label: "30d" },
-];
+export function ServiceUptime({ serviceId }: { serviceId: string }) {
+  const { range, uptime, loading } = useHistory();
+  const summary = uptime[serviceId] ?? { ratio: null, buckets: [] };
 
-export function ServiceUptime({
-  summaries,
-}: {
-  summaries: Record<TimeRange, UptimeSummary>;
-}) {
   return (
-    <div className="space-y-1.5">
-      {ROWS.map(({ range, label }) => (
-        <UptimeRow key={range} label={label} summary={summaries[range]} />
-      ))}
-    </div>
-  );
-}
-
-function UptimeRow({
-  label,
-  summary,
-}: {
-  label: string;
-  summary: UptimeSummary;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="w-8 shrink-0 text-[11px] text-zinc-500">{label}</span>
+    <div
+      className="flex items-center gap-2 transition-opacity"
+      style={{ opacity: loading ? 0.5 : 1 }}
+    >
+      <span className="w-8 shrink-0 text-[11px] text-zinc-500">{range}</span>
       <div className="flex h-5 flex-1 gap-0.5">
         {summary.buckets.map((b) => (
           <div
