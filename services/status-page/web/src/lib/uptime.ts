@@ -2,12 +2,22 @@ import { RANGE_MS } from "./history";
 import type { TimeRange } from "./types";
 
 export const SAMPLE_INTERVAL_MS = 60_000;
+export const ROLLUP_BUCKET_MS = 1_800_000;
 
 export const BUCKET_COUNTS: Record<TimeRange, number> = {
   "24h": 48,
   "7d": 84,
   "30d": 90,
 };
+
+// 表示ウィンドウを 30 分境界に整列させる (rollups_30m のバケットと一致させるため)
+export function alignedWindow(
+  range: TimeRange,
+  now: number,
+): { start: number; end: number } {
+  const end = Math.ceil(now / ROLLUP_BUCKET_MS) * ROLLUP_BUCKET_MS;
+  return { start: end - RANGE_MS[range], end };
+}
 
 export interface UptimeBucket {
   start: number;
@@ -21,39 +31,42 @@ export interface UptimeSummary {
 }
 
 export function computeUptimeFromCounts(
-  counts: number[],
+  upCounts: number[],
   range: TimeRange,
   now: number,
   firstEverMs: number | null,
 ): UptimeSummary {
-  const windowMs = RANGE_MS[range];
-  const start = now - windowMs;
+  const { start } = alignedWindow(range, now);
   const count = BUCKET_COUNTS[range];
-  const bucketMs = windowMs / count;
+  const bucketMs = RANGE_MS[range] / count;
 
   const buckets: UptimeBucket[] = [];
   let expectedTotal = 0;
-  let actualTotal = 0;
+  let upTotal = 0;
 
   for (let i = 0; i < count; i++) {
     const bs = start + i * bucketMs;
     const be = start + (i + 1) * bucketMs;
+    const effEnd = Math.min(be, now);
 
-    if (firstEverMs === null || firstEverMs >= be) {
+    if (firstEverMs === null || firstEverMs >= effEnd) {
       buckets.push({ start: bs, end: be, ratio: null });
       continue;
     }
 
     const effStart = Math.max(bs, firstEverMs);
-    const expected = (be - effStart) / SAMPLE_INTERVAL_MS;
-    const ratio = expected > 0 ? Math.min(1, counts[i] / expected) : 1;
+    const expected = (effEnd - effStart) / SAMPLE_INTERVAL_MS;
+    if (expected <= 0) {
+      buckets.push({ start: bs, end: be, ratio: null });
+      continue;
+    }
+    const ratio = Math.min(1, upCounts[i] / expected);
     buckets.push({ start: bs, end: be, ratio });
     expectedTotal += expected;
-    actualTotal += counts[i];
+    upTotal += upCounts[i];
   }
 
-  const ratio =
-    expectedTotal > 0 ? Math.min(1, actualTotal / expectedTotal) : null;
+  const ratio = expectedTotal > 0 ? Math.min(1, upTotal / expectedTotal) : null;
   return { ratio, buckets };
 }
 
