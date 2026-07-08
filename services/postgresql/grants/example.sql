@@ -1,6 +1,0 @@
--- ユーザー alice を作成し、appdb を read 可能にする例
--- 1. readonly-role.sql で readonly_appdb ロールを作成済みであること
--- 2. 以下を admin で実行:
---
--- CREATE ROLE alice LOGIN PASSWORD '...';
--- GRANT readonly_appdb TO alice;
