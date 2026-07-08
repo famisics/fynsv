@@ -92,7 +92,7 @@ locals {
       ip_address  = "192.168.2.211/24"
     }
 
-    postgresql = {
+    mysql = {
       vm_id       = 214
       target_node = "pve01"
       memory      = 4096
