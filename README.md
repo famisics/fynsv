@@ -6,9 +6,9 @@
 
 | ディレクトリ | 内容 |
 | --- | --- |
-| [`services/`](./services/README.md) | クラスタ上で動かすサービスごとの構築・運用文書と、サービス索引・クラスタ基盤の仕様 (ノード / Ceph / ストレージ) ([misskey](./services/misskey/README.md) / [obsidian-livesync](./services/obsidian-livesync/README.md) / [coolify](./services/coolify/README.md) / [misskey-mixi2-link](./services/misskey-mixi2-link/README.md)) |
-| [`terraform/`](./terraform/README.md) | ゲスト (VM / LXC) の IaC。**リソース定義の唯一の正** |
-| [`router/`](./router/README.md) | ネットワーク機器 (NEC IX2215 ×2) の設定・トポロジ・計画 |
+| [`services/`](./services/) | クラスタ上で動かすサービスごとの構築・運用文書と、サービス索引・クラスタ基盤の仕様 (ノード / Ceph / ストレージ) |
+| [`terraform/`](./terraform/) | ゲスト (VM / LXC) の IaC。**リソース定義の唯一の正** |
+| [`router/`](./router/) | ネットワーク機器 (NEC IX2215 ×2) の設定・トポロジ・計画 |
 | [`.claude/skills/claude-remote/`](./.claude/skills/claude-remote/SKILL.md) | Claude Code が SSH / シリアル越しにリモート機器を操作する基盤 (スキル) |
 | [`archives/`](./archives/) | 廃止したリソースの記録 |
 
