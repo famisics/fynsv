@@ -99,6 +99,12 @@ locals {
       disk_size   = 32
       ip_address  = "192.168.2.212/24"
     }
+
+    dawarich = {
+      vm_id       = 224
+      target_node = "pve03"
+      ip_address  = "192.168.2.213/24"
+    }
   }
 
   container_defaults = {

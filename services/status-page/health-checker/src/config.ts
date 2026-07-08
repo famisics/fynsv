@@ -72,6 +72,18 @@ export const services: Service[] = [
     proxmox: { node: "pve03", vmid: 213, type: "lxc" },
   },
   {
+    id: "dawarich",
+    name: "Dawarich",
+    category: "public",
+    enabled: true,
+    check: {
+      type: "http",
+      url: "http://192.168.2.213:3000/api/v1/health",
+      timeoutMs: 5000,
+    },
+    proxmox: { node: "pve03", vmid: 224, type: "lxc" },
+  },
+  {
     id: "misskey-mixi2-link",
     name: "Misskey-mixi2 Bridge",
     category: "internal",
