@@ -265,10 +265,10 @@ Misskey は標準ではアップロードされたメディアを `/opt/misskey/
 ### 7.1 Cloudflare ダッシュボード側の準備
 
 1. **R2 Object Storage** > **Create bucket**
-   - Bucket name: 例 `misskey-files`
+   - Bucket name: `misskey-usercontent`
    - Location: `Asia-Pacific (APAC)` 推奨
 2. 作成した bucket > **Settings** > **Public Access** > **Connect Domain**
-   - 配信用ホスト名 (例 `media.<your-domain>`) を入力。`<your-domain>` が Cloudflare 管理ドメインなら CNAME が自動で刺さる
+   - 配信用ホスト名として `misskeyusercontent.uiro.dev` を接続する (Cloudflare 管理ドメインなので CNAME は自動で刺さる)
    - `r2.dev` の Public URL は使わないので有効化不要
 3. R2 トップ > **Manage R2 API Tokens** > **Create API Token**
    - Permissions: **Object Read & Write**
@@ -286,8 +286,8 @@ Misskey は標準ではアップロードされたメディアを `/opt/misskey/
 | ラベル                        | 値                                                      |
 | ----------------------------- | ------------------------------------------------------- |
 | 使用する (Use Object Storage) | **ON**                                                  |
-| Base URL                      | `https://media.<your-domain>`                           |
-| Bucket                        | `<bucket 名>`                                           |
+| Base URL                      | `https://misskeyusercontent.uiro.dev`                   |
+| Bucket                        | `misskey-usercontent`                                   |
 | Prefix                        | `files`                                                 |
 | Endpoint                      | `<ACCOUNT_ID>.r2.cloudflarestorage.com` (https:// なし) |
 | Region                        | `auto`                                                  |
@@ -310,7 +310,7 @@ R2 固有の落とし穴 3 つ:
 ### 7.3 動作確認
 
 1. Misskey にログインして任意の画像 (プロフィール画像など) をアップロード
-2. ブラウザの開発者ツール > Network で `<img>` の URL が `https://media.<your-domain>/files/<UUID>` を指していれば成功
+2. ブラウザの開発者ツール > Network で `<img>` の URL が `https://misskeyusercontent.uiro.dev/files/<UUID>` を指していれば成功
 3. R2 のダッシュボードで bucket を開き、`files/` 配下にオブジェクトが追加されているか確認
 
 ### 7.4 既存ローカルファイルの扱い
@@ -322,7 +322,7 @@ R2 固有の落とし穴 3 つ:
 
 ```sh
 # 参考: rclone でのコピー (R2 remote 名 r2 を設定済み前提)
-rclone copy /opt/misskey/files/ r2:misskey-files/files/ --progress
+rclone copy /opt/misskey/files/ r2:misskey-usercontent/files/ --progress
 ```
 
 ### 7.5 rclone の R2 remote 設定 (参考)
@@ -358,7 +358,7 @@ vzdump は Datacenter > Backup でジョブを組むか、各ノードで `vzdum
 
 #### misskey-db の R2 バックアップ
 
-1. Cloudflare ダッシュボードで専用バケット (例 `misskey-db-backup`。メディア用 `misskey-files` とは別にする) を作成し、Object Read & Write 権限を当該バケットのみに絞った API Token を発行する (手順は Section 7.1 と同様)。Public Access は設定しない
+1. Cloudflare ダッシュボードで専用バケット (例 `misskey-db-backup`。メディア用 `misskey-usercontent` とは別にする) を作成し、Object Read & Write 権限を当該バケットのみに絞った API Token を発行する (手順は Section 7.1 と同様)。Public Access は設定しない
 2. バケットの **Object Lifecycle Rules** で一定日数 (例 30日) 超のオブジェクトを自動削除する設定にし、世代管理を R2 側に任せる
 3. misskey-db (`pct enter 211`) に `rclone` を導入し、`rclone.conf` に専用 remote (例 `r2-db-backup`) を Section 7.5 の形式で追加する
 4. `/usr/local/bin/misskey-db-backup.sh` を作成し `/etc/cron.d/misskey-db-backup` で日次実行する:
