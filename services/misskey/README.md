@@ -325,17 +325,56 @@ R2 固有の落とし穴 3 つ:
 rclone copy /opt/misskey/files/ r2:misskey-files/files/ --progress
 ```
 
+### 7.5 rclone の R2 remote 設定 (参考)
+
+上記の `r2` remote は `rclone.conf` (`~/.config/rclone/rclone.conf`) に以下のように定義する。R2 は path-style 必須・Region は `auto` (Section 7.2 の Misskey 側設定と同じ制約)。
+
+```ini
+[r2]
+type = s3
+provider = Cloudflare
+access_key_id = <Access Key ID>
+secret_access_key = <Secret Access Key>
+endpoint = <ACCOUNT_ID>.r2.cloudflarestorage.com
+acl = private
+```
+
+認証情報を含むため `chmod 600 ~/.config/rclone/rclone.conf` で保護する。DB バックアップ用の remote (Section 8) も同じ形式で、バケットとトークンを分けて追加する。
+
 ## 8. 運用メモ
 
 ### バックアップ単位
 
-| 対象            | 推奨頻度              | 方法                                                                                              |
-| --------------- | --------------------- | ------------------------------------------------------------------------------------------------- |
-| LXC 211 (db)    | 日次 + LXC 全体は週次 | コンテナ内で `pg_dump -Fc misskey > /var/backups/misskey-$(date +%F).dump` を cron。vzdump は週次 |
-| LXC 212 (redis) | 週次                  | vzdump のみで十分 (キャッシュ + キュー用途)                                                       |
-| LXC 210 (web)   | 週次                  | vzdump。`/opt/misskey/files` だけは必要に応じて日次に上げる                                       |
+| 対象            | 推奨頻度 | 方法                                                                                                                      |
+| --------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
+| LXC 211 (db)    | 日次     | 一次データ (投稿・ユーザー等) を保持する唯一のゲスト。`pg_dump` → Cloudflare R2 へアップロード (下記参照) + 週次 vzdump   |
+| LXC 212 (redis) | 不要     | キャッシュ + ジョブキューのみで一次データを持たない。壊れても空の Redis として作り直せば復旧する                          |
+| LXC 210 (web)   | 不要     | アプリケーションコードは git clone + 本 README の手順で再現可能。`/opt/misskey/files` は R2 移行済みなら空 (Section 7 参照) |
+| R2 (メディア)   | 不要     | Cloudflare 側で冗長化済み                                                                                                  |
+
+vzdump の保存先 `local` は node-local ストレージのため、ゲストが乗るノード自体が壊れると同じノード上の vzdump も道連れで失われる (詳細は [`../README.md`](../README.md) のストレージ構成参照)。misskey-db は一次データを持つ唯一のゲストなので、この穴を避けるためオフサイト (クラスタ外) の R2 にもバックアップする。
 
 vzdump は Datacenter > Backup でジョブを組むか、各ノードで `vzdump 211 --storage <backup-storage> --mode snapshot` を cron に置く。
+
+#### misskey-db の R2 バックアップ
+
+1. Cloudflare ダッシュボードで専用バケット (例 `misskey-db-backup`。メディア用 `misskey-files` とは別にする) を作成し、Object Read & Write 権限を当該バケットのみに絞った API Token を発行する (手順は Section 7.1 と同様)。Public Access は設定しない
+2. バケットの **Object Lifecycle Rules** で一定日数 (例 30日) 超のオブジェクトを自動削除する設定にし、世代管理を R2 側に任せる
+3. misskey-db (`pct enter 211`) に `rclone` を導入し、`rclone.conf` に専用 remote (例 `r2-db-backup`) を Section 7.5 の形式で追加する
+4. `/usr/local/bin/misskey-db-backup.sh` を作成し `/etc/cron.d/misskey-db-backup` で日次実行する:
+
+   ```sh
+   #!/bin/sh
+   set -eu
+   DUMP=/var/backups/misskey-$(date +%F).dump
+   # root からの peer 認証は misskey ロールと一致しないため、superuser の postgres 経由でダンプする
+   sudo -u postgres pg_dump -Fc misskey > "$DUMP"
+   rclone copy "$DUMP" r2-db-backup:misskey-db-backup/
+   rm -f "$DUMP"
+   find /var/backups -name 'misskey-*.dump' -mtime +3 -delete
+   ```
+
+   ローカルの dump は数日分のみ保持し (rootfs 圧迫回避)、実体の保持期間は R2 側の Lifecycle Rule に委ねる。
 
 ### 更新手順
 
