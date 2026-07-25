@@ -35,6 +35,7 @@ locals {
     misskey-web = {
       vm_id       = 210
       target_node = "pve03"
+      swap = 2048
       disk_size   = 32
       firewall    = false
       ip_address  = "192.168.2.203/24"

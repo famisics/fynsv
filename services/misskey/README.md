@@ -378,7 +378,13 @@ vzdump は Datacenter > Backup でジョブを組むか、各ノードで `vzdum
 
 ### 更新手順
 
-- Misskey 本体 (misskey-web で `misskey` ユーザとして):
+- Misskey 本体: [`update-misskey.sh`](./update-misskey.sh) を misskey-web (`pct enter 210`) に root で転送・実行する。
+
+  ```sh
+  ./update-misskey.sh <new-tag>   # 例: ./update-misskey.sh 2026.6.0
+  ```
+
+  中身は以下の手順を自動化したもの (misskey ユーザで fetch/checkout/build/migrate → root で systemctl restart):
 
   ```sh
   cd /opt/misskey
