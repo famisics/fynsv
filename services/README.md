@@ -11,14 +11,14 @@
 | サービス | ディレクトリ | 役割 | ゲスト (VMID) |
 | --- | --- | --- | --- |
 | Misskey | [`misskey/`](./misskey/README.md) | Misskey 本体 / PostgreSQL / Redis の 3 LXC 構成 | 210 / 211 / 212 |
-| misskey-mixi2-link | [`misskey-mixi2-link/`](./misskey-mixi2-link/README.md) | Misskey ⇔ mixi2 投稿ブリッジ | 216 |
+| misskey-mixi2-link | [`arona/misskey-mixi2-link/`](./arona/misskey-mixi2-link/README.md) | Misskey ⇔ mixi2 投稿ブリッジ。arona 上で Docker 常駐 | — |
 | Obsidian LiveSync | [`obsidian-livesync/`](./obsidian-livesync/README.md) | CouchDB (Obsidian Self-hosted LiveSync バックエンド) | 213 |
 | mysql | [`mysql/`](./mysql/README.md) | MariaDB + phpMyAdmin (共有 DB 基盤) | 214 |
 | Coolify | [`coolify/`](./coolify/README.md) | コントロールプレーン / アプリ実行サーバー | 220 / 221 |
 | dawarich | [`dawarich/`](./dawarich/README.md) | 位置情報トラッキング (PostGIS + Redis + Sidekiq, Docker Compose) | 224 |
 | Status Page | [`status-page/`](./status-page/README.md) | サービス稼働状況・リソース使用量の収集と公開 | — |
-| discord-bot | `discord-bot/` (README 未整備) | Discord bot (fun-council: リマインダー / ロール自動付与)。arona 上で Docker 常駐 | — |
-| swarm-gcal-sync | [`swarm-gcal-sync/`](./swarm-gcal-sync/README.md) | Swarm チェックイン → Google カレンダー同期。arona 上で Docker 常駐 | — |
+| discord-bot | [`arona/discord-bot/`](./arona/discord-bot/) | Discord bot (fun-council: リマインダー / ロール自動付与、uiroid: Misskey のハッシュタグ投稿を Discord に転送)。arona 上で Docker 常駐 | — |
+| swarm-gcal-sync | [`arona/swarm-gcal-sync/`](./arona/swarm-gcal-sync/README.md) | Swarm チェックイン → Google カレンダー同期。arona 上で Docker 常駐 | — |
 
 ## ゲスト (VM / LXC) 一覧
 
@@ -35,14 +35,13 @@
 | 212  | lxc  | `misskey-redis`      | pve02  | Redis                                           |
 | 213  | lxc  | `obsidian-livesync`  | pve03  | CouchDB (Docker)、Obsidian LiveSync バックエンド |
 | 214  | lxc  | `mysql`              | pve01  | MariaDB + phpMyAdmin (共有 DB 基盤)             |
-| 216  | lxc  | `misskey-mixi2-link` | pve02  | Misskey⇔mixi2 ブリッジ (再セットアップ待ち)     |
 | 220  | lxc  | `coolify-cp`         | pve02  | Coolify コントロールプレーン                    |
 | 221  | lxc  | `coolify-app`        | pve02  | Coolify アプリ実行サーバー                      |
 | 222  | lxc  | `dokploy`            | pve01  | Dokploy (PaaS、詳細未整理、stopped)             |
 | 223  | lxc  | `kei`                | pve03  | 開発用途                                        |
 | 224  | lxc  | `dawarich`           | pve03  | dawarich (位置情報トラッキング、Docker Compose) |
 
-各ゲスト内部の構築・運用は対応するサービス文書を正とする: [misskey](./misskey/README.md) (210/211/212) / [obsidian-livesync](./obsidian-livesync/README.md) (213) / [mysql](./mysql/README.md) (214) / [misskey-mixi2-link](./misskey-mixi2-link/README.md) (216) / [coolify](./coolify/README.md) (220/221) / [dawarich](./dawarich/README.md) (224)。
+各ゲスト内部の構築・運用は対応するサービス文書を正とする: [misskey](./misskey/README.md) (210/211/212) / [obsidian-livesync](./obsidian-livesync/README.md) (213) / [mysql](./mysql/README.md) (214) / [coolify](./coolify/README.md) (220/221) / [dawarich](./dawarich/README.md) (224)。arona (VM 100) 上で Docker 常駐する misskey-mixi2-link / swarm-gcal-sync / discord-bot はゲスト表に個別 VMID を持たず、[arona/README.md](./arona/README.md) の索引を正とする。
 
 ### 公開口 arona (VM 100)
 

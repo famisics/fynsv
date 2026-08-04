@@ -10,7 +10,7 @@
 
 リソース割り当て (ノード / IP / cores / RAM / rootfs / features) は [`../../terraform/`](../../terraform/) を正とする。
 
-公開は `arona` (pve01, VMID 100) で稼働中の `cloudflared` に ingress を追加し、`misskey.<your-domain>` → `http://192.168.2.203:3000` に向ける。
+公開は `arona` (pve02, VMID 100) で稼働中の `cloudflared` に ingress を追加し、`misskey.<your-domain>` → `http://192.168.2.203:3000` に向ける。
 
 ## 前提
 

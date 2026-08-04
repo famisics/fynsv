@@ -1,0 +1,8 @@
+services:
+  bridge:
+    build:
+      context: ..
+      dockerfile: misskey-mixi2-link/Dockerfile
+    env_file:
+      - .env
+    restart: unless-stopped
