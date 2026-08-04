@@ -1,7 +1,8 @@
 services:
   sync:
     build:
-      context: .
+      context: ..
+      dockerfile: swarm-gcal-sync/Dockerfile
     # secrets/ はホスト側ユーザー所有・0600。コンテナ uid と一致しないため
     # root で動かして読む (CAP_DAC_OVERRIDE)。トークン/鍵は world-read にしない。
     user: "0:0"

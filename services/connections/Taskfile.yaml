@@ -19,5 +19,16 @@ tasks:
   deploy:misskey-mixi2-link:
     desc: misskey-mixi2-link を arona に転送してビルド・再起動する
     cmds:
-      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata go.mod go.sum shared/misskey misskey-mixi2-link/main.go misskey-mixi2-link/config misskey-mixi2-link/logging misskey-mixi2-link/retry misskey-mixi2-link/store misskey-mixi2-link/mixi2 misskey-mixi2-link/bridge misskey-mixi2-link/Dockerfile misskey-mixi2-link/compose.yml misskey-mixi2-link/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
+      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata go.mod go.sum shared misskey-mixi2-link/main.go misskey-mixi2-link/config misskey-mixi2-link/store misskey-mixi2-link/mixi2 misskey-mixi2-link/bridge misskey-mixi2-link/Dockerfile misskey-mixi2-link/compose.yml misskey-mixi2-link/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
       - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/misskey-mixi2-link && docker compose up -d --build"
+
+  deploy:swarm-gcal-sync:
+    desc: swarm-gcal-sync を arona に転送してビルド・再起動する
+    cmds:
+      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata go.mod go.sum shared swarm-gcal-sync/*.go swarm-gcal-sync/Dockerfile swarm-gcal-sync/compose.yml swarm-gcal-sync/.env swarm-gcal-sync/secrets | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
+      - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/swarm-gcal-sync && docker compose up -d --build"
+
+  backfill:swarm-gcal-sync:
+    desc: arona 上で swarm-gcal-sync に過去の全チェックインを取り込ませる (一度だけ実行)
+    cmds:
+      - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/swarm-gcal-sync && docker compose run --rm sync -backfill"
