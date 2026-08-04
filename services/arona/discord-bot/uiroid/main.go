@@ -8,11 +8,11 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/famisics/fynsv/services/connections/discord-bot/uiroid/config"
-	misskeydiscordlink "github.com/famisics/fynsv/services/connections/discord-bot/uiroid/features/misskey-discord-link"
-	"github.com/famisics/fynsv/services/connections/shared/logging"
-	sharedmisskey "github.com/famisics/fynsv/services/connections/shared/misskey"
-	"github.com/famisics/fynsv/services/connections/shared/runutil"
+	"github.com/famisics/fynsv/services/arona/discord-bot/uiroid/config"
+	misskeydiscordlink "github.com/famisics/fynsv/services/arona/discord-bot/uiroid/features/misskey-discord-link"
+	"github.com/famisics/fynsv/services/arona/shared/logging"
+	sharedmisskey "github.com/famisics/fynsv/services/arona/shared/misskey"
+	"github.com/famisics/fynsv/services/arona/shared/runutil"
 )
 
 func main() {

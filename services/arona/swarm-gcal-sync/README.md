@@ -6,7 +6,7 @@ Swarm (Foursquare) のチェックイン履歴を Google カレンダーに同�
 
 | 稼働先          | デプロイ形式                       | 配置                         |
 | --------------- | ---------------------------------- | ---------------------------- |
-| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/connections/swarm-gcal-sync` (Taskfile で転送) |
+| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/swarm-gcal-sync` (Taskfile で転送) |
 
 リソース割り当て (arona の cores / RAM 等) は [`../../../terraform/`](../../../terraform/) を正とする。
 
@@ -76,7 +76,7 @@ go run . -once       # 直近のチェックインを 1 回だけ同期 (再実�
 ## arona へのデプロイ
 
 ```sh
-task deploy:swarm-gcal-sync   # services/connections で実行。ソース・Dockerfile・compose.yml・.env・secrets/ を転送し docker compose up -d --build
+task deploy:swarm-gcal-sync   # services/arona で実行。ソース・Dockerfile・compose.yml・.env・secrets/ を転送し docker compose up -d --build
 ```
 
 `.env` と `secrets/` (SA 鍵・Foursquare トークン) も転送される。デプロイ後、コンテナは常駐し毎日 JST 0:00 に同期する。
@@ -93,10 +93,10 @@ task backfill:swarm-gcal-sync   # arona 上で docker compose run --rm sync -bac
 
 | 操作 | コマンド |
 | --- | --- |
-| ログ確認 | `ssh arona "cd ~/connections/swarm-gcal-sync && docker compose logs -f"` |
-| 再起動 | `ssh arona "cd ~/connections/swarm-gcal-sync && docker compose restart"` |
+| ログ確認 | `ssh arona "cd ~/swarm-gcal-sync && docker compose logs -f"` |
+| 再起動 | `ssh arona "cd ~/swarm-gcal-sync && docker compose restart"` |
 | 再デプロイ | `task deploy:swarm-gcal-sync` |
-| 手動で増分同期 | `ssh arona "cd ~/connections/swarm-gcal-sync && docker compose run --rm sync -once"` |
+| 手動で増分同期 | `ssh arona "cd ~/swarm-gcal-sync && docker compose run --rm sync -once"` |
 
 ### 障害切り分けの第一手
 

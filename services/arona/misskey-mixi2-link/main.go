@@ -8,13 +8,13 @@ import (
 
 	"github.com/tursodatabase/libsql-client-go/libsql"
 
-	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/bridge"
-	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/config"
-	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/mixi2"
-	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/store"
-	"github.com/famisics/fynsv/services/connections/shared/logging"
-	sharedmisskey "github.com/famisics/fynsv/services/connections/shared/misskey"
-	"github.com/famisics/fynsv/services/connections/shared/runutil"
+	"github.com/famisics/fynsv/services/arona/misskey-mixi2-link/bridge"
+	"github.com/famisics/fynsv/services/arona/misskey-mixi2-link/config"
+	"github.com/famisics/fynsv/services/arona/misskey-mixi2-link/mixi2"
+	"github.com/famisics/fynsv/services/arona/misskey-mixi2-link/store"
+	"github.com/famisics/fynsv/services/arona/shared/logging"
+	sharedmisskey "github.com/famisics/fynsv/services/arona/shared/misskey"
+	"github.com/famisics/fynsv/services/arona/shared/runutil"
 )
 
 func openTursoDB(url, authToken string) (*sql.DB, error) {

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/famisics/fynsv/services/connections/shared/logging"
+	"github.com/famisics/fynsv/services/arona/shared/logging"
 )
 
 var logger = logging.New()

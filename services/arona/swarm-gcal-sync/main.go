@@ -10,8 +10,8 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/famisics/fynsv/services/connections/shared/logging"
-	"github.com/famisics/fynsv/services/connections/shared/runutil"
+	"github.com/famisics/fynsv/services/arona/shared/logging"
+	"github.com/famisics/fynsv/services/arona/shared/runutil"
 )
 
 // jst はスケジューラ用の固定タイムゾーン (JST は DST がないため FixedZone で十分)。

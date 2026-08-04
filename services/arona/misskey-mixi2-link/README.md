@@ -9,7 +9,7 @@ see also [../../README.md](../../README.md) / [../misskey/README.md](../misskey/
 
 | 稼働先           | デプロイ形式                                      | 配置                                  |
 | ---------------- | ------------------------------------------------- | ------------------------------------- |
-| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/connections/misskey-mixi2-link` (Taskfile で転送) |
+| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/misskey-mixi2-link` (Taskfile で転送) |
 
 リソース割り当て (arona の cores / RAM 等) は [`../../../terraform/`](../../../terraform/) を正とする。
 
@@ -101,7 +101,7 @@ turso db tokens create <db-name>  # → TURSO_AUTH_TOKEN
 ## 3. ローカルでの動作確認 (任意)
 
 ```sh
-cd ..                                  # services/connections (モジュールルート)
+cd ..                                  # services/arona (モジュールルート)
 go build ./...                         # ビルド確認
 go test ./misskey-mixi2-link/...       # フィルタ / 変換 / ストアのテスト
 DRY_RUN=1 go run ./misskey-mixi2-link  # 実投稿せず変換結果のログだけ確認
@@ -110,7 +110,7 @@ DRY_RUN=1 go run ./misskey-mixi2-link  # 実投稿せず変換結果のログだ
 ## 4. arona へのデプロイ
 
 ```sh
-task deploy:misskey-mixi2-link   # services/connections で実行。ソース・Dockerfile・compose.yml・.env を転送し docker compose up -d --build
+task deploy:misskey-mixi2-link   # services/arona で実行。ソース・Dockerfile・compose.yml・.env を転送し docker compose up -d --build
 ```
 
 `.env` も転送される。デプロイ後、コンテナは常駐し両方向のブリッジを継続する。
@@ -129,8 +129,8 @@ task deploy:misskey-mixi2-link   # services/connections で実行。ソース・
 
 | 操作 | コマンド |
 | --- | --- |
-| ログ確認 | `ssh arona "cd ~/connections/misskey-mixi2-link && docker compose logs -f"` |
-| 再起動 | `ssh arona "cd ~/connections/misskey-mixi2-link && docker compose restart"` |
+| ログ確認 | `ssh arona "cd ~/misskey-mixi2-link && docker compose logs -f"` |
+| 再起動 | `ssh arona "cd ~/misskey-mixi2-link && docker compose restart"` |
 | 再デプロイ | `task deploy:misskey-mixi2-link` |
 
 ### 障害切り分けの第一手

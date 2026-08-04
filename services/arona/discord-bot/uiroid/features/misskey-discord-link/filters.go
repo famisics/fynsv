@@ -3,7 +3,7 @@ package misskeydiscordlink
 import (
 	"strings"
 
-	sharedmisskey "github.com/famisics/fynsv/services/connections/shared/misskey"
+	sharedmisskey "github.com/famisics/fynsv/services/arona/shared/misskey"
 )
 
 // normalizeHashtag lowercases hashtag and strips a leading '#', matching how

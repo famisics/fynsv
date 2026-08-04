@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/famisics/fynsv/services/connections/shared/logging"
+	"github.com/famisics/fynsv/services/arona/shared/logging"
 )
 
 var jst = time.FixedZone("Asia/Tokyo", 9*60*60)

@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/mixi2"
-	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/store"
-	sharedmisskey "github.com/famisics/fynsv/services/connections/shared/misskey"
-	"github.com/famisics/fynsv/services/connections/shared/retry"
+	"github.com/famisics/fynsv/services/arona/misskey-mixi2-link/mixi2"
+	"github.com/famisics/fynsv/services/arona/misskey-mixi2-link/store"
+	sharedmisskey "github.com/famisics/fynsv/services/arona/shared/misskey"
+	"github.com/famisics/fynsv/services/arona/shared/retry"
 )
 
 const mixi2ToMisskeyDirection store.Direction = "mixi2->misskey"

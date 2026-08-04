@@ -1,4 +1,4 @@
-module github.com/famisics/fynsv/services/connections
+module github.com/famisics/fynsv/services/arona
 
 go 1.25.0
 

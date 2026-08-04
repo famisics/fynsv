@@ -1,4 +1,4 @@
-# connections
+# arona
 
 外部サービス (Discord / Misskey / mixi2) との連携・ブリッジをまとめたディレクトリ。各サービスの内部構築・運用は各サブディレクトリの README を正とする。
 

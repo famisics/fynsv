@@ -2,7 +2,7 @@ version: "3"
 
 vars:
   HOST: arona
-  REMOTE_DIR: "~/connections"
+  REMOTE_DIR: "~"
 
 tasks:
   default:

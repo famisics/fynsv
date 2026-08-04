@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/famisics/fynsv/services/connections/discord-bot/fun-council/features/reminder"
-	"github.com/famisics/fynsv/services/connections/discord-bot/fun-council/features/rolesync"
-	"github.com/famisics/fynsv/services/connections/shared/logging"
-	"github.com/famisics/fynsv/services/connections/shared/runutil"
+	"github.com/famisics/fynsv/services/arona/discord-bot/fun-council/features/reminder"
+	"github.com/famisics/fynsv/services/arona/discord-bot/fun-council/features/rolesync"
+	"github.com/famisics/fynsv/services/arona/shared/logging"
+	"github.com/famisics/fynsv/services/arona/shared/runutil"
 )
 
 var logger = logging.New()

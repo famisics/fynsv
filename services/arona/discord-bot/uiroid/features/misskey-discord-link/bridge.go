@@ -6,7 +6,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	sharedmisskey "github.com/famisics/fynsv/services/connections/shared/misskey"
+	sharedmisskey "github.com/famisics/fynsv/services/arona/shared/misskey"
 )
 
 // BridgeDeps are the collaborators Bridge needs.
