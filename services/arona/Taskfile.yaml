@@ -3,6 +3,8 @@ version: "3"
 vars:
   HOST: arona
   REMOTE_DIR: "~"
+  REMOTE_GOOS: linux
+  REMOTE_GOARCH: amd64
 
 tasks:
   default:
@@ -10,28 +12,56 @@ tasks:
     cmds:
       - task --list
 
-  deploy:fun-council:
-    desc: discord-bot/fun-council を arona に転送してビルド・再起動する
+  build:fun-council:
+    internal: true
+    dir: "{{.ROOT_DIR}}"
     cmds:
-      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata go.mod go.sum shared discord-bot/fun-council/Dockerfile discord-bot/fun-council/compose.yml discord-bot/fun-council/main.go discord-bot/fun-council/features discord-bot/fun-council/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
+      - GOOS={{.REMOTE_GOOS}} GOARCH={{.REMOTE_GOARCH}} CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/fun-council/bot ./discord-bot/fun-council
+
+  deploy:fun-council:
+    desc: discord-bot/fun-council をローカルでビルドし、arona に転送・再起動する
+    deps: [build:fun-council]
+    cmds:
+      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata dist/fun-council/bot discord-bot/fun-council/Dockerfile discord-bot/fun-council/compose.yml discord-bot/fun-council/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
       - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/discord-bot/fun-council && docker compose up -d --build"
 
-  deploy:uiroid:
-    desc: discord-bot/uiroid を arona に転送してビルド・再起動する
+  build:uiroid:
+    internal: true
+    dir: "{{.ROOT_DIR}}"
     cmds:
-      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata go.mod go.sum shared discord-bot/uiroid/Dockerfile discord-bot/uiroid/compose.yml discord-bot/uiroid/main.go discord-bot/uiroid/config discord-bot/uiroid/features discord-bot/uiroid/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
+      - GOOS={{.REMOTE_GOOS}} GOARCH={{.REMOTE_GOARCH}} CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/uiroid/bot ./discord-bot/uiroid
+
+  deploy:uiroid:
+    desc: discord-bot/uiroid をローカルでビルドし、arona に転送・再起動する
+    deps: [build:uiroid]
+    cmds:
+      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata dist/uiroid/bot discord-bot/uiroid/Dockerfile discord-bot/uiroid/compose.yml discord-bot/uiroid/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
       - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/discord-bot/uiroid && docker compose up -d --build"
 
-  deploy:misskey-mixi2-link:
-    desc: misskey-mixi2-link を arona に転送してビルド・再起動する
+  build:misskey-mixi2-link:
+    internal: true
+    dir: "{{.ROOT_DIR}}"
     cmds:
-      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata go.mod go.sum shared misskey-mixi2-link/main.go misskey-mixi2-link/config misskey-mixi2-link/store misskey-mixi2-link/mixi2 misskey-mixi2-link/bridge misskey-mixi2-link/Dockerfile misskey-mixi2-link/compose.yml misskey-mixi2-link/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
+      - GOOS={{.REMOTE_GOOS}} GOARCH={{.REMOTE_GOARCH}} CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/misskey-mixi2-link/bridge ./misskey-mixi2-link
+
+  deploy:misskey-mixi2-link:
+    desc: misskey-mixi2-link をローカルでビルドし、arona に転送・再起動する
+    deps: [build:misskey-mixi2-link]
+    cmds:
+      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata dist/misskey-mixi2-link/bridge misskey-mixi2-link/Dockerfile misskey-mixi2-link/compose.yml misskey-mixi2-link/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
       - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/misskey-mixi2-link && docker compose up -d --build"
 
-  deploy:swarm-gcal-sync:
-    desc: swarm-gcal-sync を arona に転送してビルド・再起動する
+  build:swarm-gcal-sync:
+    internal: true
+    dir: "{{.ROOT_DIR}}"
     cmds:
-      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata go.mod go.sum shared swarm-gcal-sync/*.go swarm-gcal-sync/Dockerfile swarm-gcal-sync/compose.yml swarm-gcal-sync/.env swarm-gcal-sync/secrets | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
+      - GOOS={{.REMOTE_GOOS}} GOARCH={{.REMOTE_GOARCH}} CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/swarm-gcal-sync/sync ./swarm-gcal-sync
+
+  deploy:swarm-gcal-sync:
+    desc: swarm-gcal-sync をローカルでビルドし、arona に転送・再起動する
+    deps: [build:swarm-gcal-sync]
+    cmds:
+      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata dist/swarm-gcal-sync/sync swarm-gcal-sync/Dockerfile swarm-gcal-sync/compose.yml swarm-gcal-sync/.env swarm-gcal-sync/secrets | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
       - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/swarm-gcal-sync && docker compose up -d --build"
 
   backfill:swarm-gcal-sync:
