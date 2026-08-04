@@ -68,3 +68,7 @@ tasks:
     desc: arona 上で swarm-gcal-sync に過去の全チェックインを取り込ませる (一度だけ実行)
     cmds:
       - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/swarm-gcal-sync && docker compose run --rm sync -backfill"
+
+  deploy:all:
+    desc: 全てのサービスをローカルでビルドし、arona に転送・再起動する
+    deps: [deploy:fun-council, deploy:uiroid, deploy:misskey-mixi2-link, deploy:swarm-gcal-sync]
