@@ -71,12 +71,11 @@ func main() {
 	}
 
 	bridge := misskeydiscordlink.NewBridge(misskeydiscordlink.BridgeDeps{
-		Store:               store,
-		Misskey:             misskeyClient,
-		Discord:             dg,
-		MisskeyUserID:       misskeyUserID,
-		MisskeyPublicOrigin: cfg.MisskeyPublicOrigin,
-		Logger:              logger,
+		Store:         store,
+		Misskey:       misskeyClient,
+		Discord:       dg,
+		MisskeyUserID: misskeyUserID,
+		Logger:        logger,
 	})
 
 	if err := bridge.Backfill(); err != nil {

@@ -11,12 +11,11 @@ import (
 
 // BridgeDeps are the collaborators Bridge needs.
 type BridgeDeps struct {
-	Store               *Store
-	Misskey             *sharedmisskey.Client
-	Discord             *discordgo.Session
-	MisskeyUserID       string
-	MisskeyPublicOrigin string
-	Logger              *slog.Logger
+	Store         *Store
+	Misskey       *sharedmisskey.Client
+	Discord       *discordgo.Session
+	MisskeyUserID string
+	Logger        *slog.Logger
 }
 
 // Bridge forwards the account owner's own hashtagged Misskey notes to the
@@ -106,7 +105,7 @@ func (b *Bridge) HandleNote(note sharedmisskey.Note) error {
 }
 
 func (b *Bridge) forward(channelID string, note sharedmisskey.Note) error {
-	message := formatMessage(note, b.deps.MisskeyPublicOrigin)
+	message := formatMessage(note)
 	if _, err := b.deps.Discord.ChannelMessageSend(channelID, message); err != nil {
 		return err
 	}
@@ -117,12 +116,11 @@ func (b *Bridge) forward(channelID string, note sharedmisskey.Note) error {
 	return nil
 }
 
-func formatMessage(note sharedmisskey.Note, publicOrigin string) string {
+func formatMessage(note sharedmisskey.Note) string {
 	var body string
 	if note.Text != nil {
 		body = *note.Text
 	}
-	noteURL := publicOrigin + "/notes/" + note.ID
 
 	var lines []string
 	if body != "" {
@@ -133,7 +131,6 @@ func formatMessage(note sharedmisskey.Note, publicOrigin string) string {
 			lines = append(lines, *f.URL)
 		}
 	}
-	lines = append(lines, noteURL)
 	return strings.Join(lines, "\n")
 }
 

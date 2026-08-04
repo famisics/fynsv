@@ -14,7 +14,7 @@
 
 - **転送条件**: 本人アカウントの公開ノートのうち、リプライ・リノート・引用でなく、CW なしで、設定したハッシュタグを含むものだけ転送する。Misskey Streaming API で検知し、停止中の投稿は起動時に `users/notes` でバックフィルする。
 - **転送先**: `/misskey-link channel` で設定した Discord チャンネル。未設定の間はスキップする (バックフィル・購読自体は継続する)。
-- **本文**: ノート本文 + 画像 URL (画像添付がある場合) + 元ノートの URL (`MISSKEY_PUBLIC_ORIGIN` 起点)。
+- **本文**: ノート本文 + 画像 URL (画像添付がある場合)。Misskey のノートへのリンクは転送しない。
 - **重複防止**: 転送済みノート ID を SQLite (`DB_PATH`) に記録し、再起動・イベント再配信時の二重転送を防ぐ。カーソルは転送対象外のノートでも常に進める。
 
 ### スラッシュコマンド (`/misskey-link`、要 Manage Server 権限)
@@ -41,7 +41,6 @@
 | --- | --- | --- |
 | `DISCORD_TOKEN` | ○ | Discord bot のトークン (Developer Portal > Bot > Reset Token) |
 | `MISSKEY_ORIGIN` | ○ | Misskey の接続先 (LAN 直結ならゲストの http URL、例 `http://192.168.2.203:3000`) |
-| `MISSKEY_PUBLIC_ORIGIN` | ○ | 転送メッセージに付与する元ノート URL のオリジン (公開 URL) |
 | `MISSKEY_USER_ID` | ○ | 本人アカウントのスクリーンネーム (`@` なし) |
 | `MISSKEY_USER_TOKEN` | ○ | 本人アカウントのトークン (`read:account`) |
 | `DB_PATH` | ○ | SQLite データベースファイルのパス (docker compose では `/data/uiroid.db`) |
@@ -67,7 +66,7 @@ task deploy:uiroid   # services/arona で実行。ソース・Dockerfile・compo
 1. Discord で `/misskey-link channel` → 転送先チャンネルを設定
 2. Discord で `/misskey-link hashtag` → 監視するハッシュタグを設定
 3. Discord で `/misskey-link status` → 設定した内容が表示される
-4. Misskey に設定したハッシュタグ付きの公開ノート (本人アカウント) を投稿 → 設定したチャンネルに本文 + 元ノート URL が出る
+4. Misskey に設定したハッシュタグ付きの公開ノート (本人アカウント) を投稿 → 設定したチャンネルに本文 (+ 画像添付) が出る
 5. リプライ / リノート / CW 付き / ハッシュタグなし → **転送されない**
 6. `docker compose restart` 直後に直前のノートが**二重転送されない** (SQLite 記録)
 7. サービス停止中にノートを投稿 → 起動後にバックフィルで転送される
