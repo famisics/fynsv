@@ -12,4 +12,4 @@
 | `shared/` | 複数サービスで共通利用する Go パッケージ (`shared/<パッケージ名>/...`)。`logging` (JSON ログ), `retry` (指数バックオフ), `runutil` (シグナル待ち), `misskey` (Misskey REST/streaming クライアント) |
 
 `go.mod` / `go.sum` / `Taskfile.yaml` はこのディレクトリを Go モジュールルートとして共有する
-(`discord-bot/fun-council`, `discord-bot/rostercheck`, `misskey-mixi2-link`, `swarm-gcal-sync` が対象)。
+(`discord-bot/fun-council`, `misskey-mixi2-link`, `swarm-gcal-sync` が対象)。
