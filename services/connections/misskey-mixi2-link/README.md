@@ -3,13 +3,13 @@
 see also [../../README.md](../../README.md) / [../misskey/README.md](../misskey/README.md)
 
 [services README](../../README.md) で説明したクラスタ FYNSV 上の Misskey ([../misskey/README.md](../misskey/README.md)) と
-[mixi2](https://mixi.social) の間で投稿を相互コピーするブリッジ。本体は TypeScript / [Bun](https://bun.sh) 製でこのディレクトリに同梱する。
+[mixi2](https://mixi.social) の間で投稿を相互コピーするブリッジ。本体は Go 製でこのディレクトリに同梱する。
 
-新規 LXC は払い出さず、`arona` (pve01, VMID 100) 上の Docker で常駐させる ([swarm-gcal-sync](../../swarm-gcal-sync/) / [discord-bot](../discord-bot/) と同じ形式)。外部公開はしない (送信のみ)。
+新規 LXC は払い出さず、`arona` (pve02, VMID 100) 上の Docker で常駐させる ([swarm-gcal-sync](../swarm-gcal-sync/) / [discord-bot](../discord-bot/) と同じ形式)。外部公開はしない (送信のみ)。
 
 | 稼働先           | デプロイ形式                                      | 配置                                  |
 | ---------------- | ------------------------------------------------- | ------------------------------------- |
-| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/misskey-mixi2-link` (Taskfile で転送) |
+| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/connections/misskey-mixi2-link` (Taskfile で転送) |
 
 リソース割り当て (arona の cores / RAM 等) は [`../../../terraform/`](../../../terraform/) を正とする。
 
@@ -34,7 +34,7 @@ see also [../../README.md](../../README.md) / [../misskey/README.md](../misskey/
                 FYNSV LAN (192.168.2.0/24)
 ┌────────────────────────┐      ┌───────────────────────────────────┐
 │ misskey-web            │◀─WS──│ arona (VM 100) Docker             │
-│ Misskey :3000 (http)   │◀REST─│  bridge (Bun コンテナ)            │
+│ Misskey :3000 (http)   │◀REST─│  bridge (Go コンテナ)             │
 └────────────────────────┘      │   ├ misskey watcher (streaming)   │──▶ mixi2 Application API
                                 │   ├ mixi2 watcher (gRPC stream)   │    (gRPC, outbound のみ)
                                 │   ├ 変換 / フィルタ                │
@@ -48,7 +48,7 @@ see also [../../README.md](../../README.md) / [../misskey/README.md](../misskey/
 ## 前提
 
 - `arona` に SSH (`ssh arona`) で入れて Docker / Docker Compose v2 が使えること。
-- ローカルに [Task](https://taskfile.dev/) があること (デプロイ用)。型チェック・テストを手元で回す場合は [Bun](https://bun.sh)。
+- ローカルに [Task](https://taskfile.dev/) があること (デプロイ用)。ビルド・テストを手元で回す場合は Go 1.25。
 - Misskey に転載先の **bot アカウント**を作成済みで、API トークンを 2 本発行できること
   - 本人アカウント: ストリーミング購読・ノート読み取り用
   - bot アカウント: `write:notes` / `write:drive`
@@ -101,16 +101,16 @@ turso db tokens create <db-name>  # → TURSO_AUTH_TOKEN
 ## 3. ローカルでの動作確認 (任意)
 
 ```sh
-bun install --frozen-lockfile
-bun run typecheck          # 型チェック
-bun test                   # フィルタ / 変換 / ストアのテスト
-DRY_RUN=1 bun src/index.ts # 実投稿せず変換結果のログだけ確認
+cd ..                                  # services/connections (モジュールルート)
+go build ./...                         # ビルド確認
+go test ./misskey-mixi2-link/...       # フィルタ / 変換 / ストアのテスト
+DRY_RUN=1 go run ./misskey-mixi2-link  # 実投稿せず変換結果のログだけ確認
 ```
 
 ## 4. arona へのデプロイ
 
 ```sh
-task deploy   # ソース・Dockerfile・compose.yml・.env を転送し docker compose up -d --build
+task deploy:misskey-mixi2-link   # services/connections で実行。ソース・Dockerfile・compose.yml・.env を転送し docker compose up -d --build
 ```
 
 `.env` も転送される。デプロイ後、コンテナは常駐し両方向のブリッジを継続する。
@@ -129,9 +129,9 @@ task deploy   # ソース・Dockerfile・compose.yml・.env を転送し docker 
 
 | 操作 | コマンド |
 | --- | --- |
-| ログ確認 | `ssh arona "cd ~/misskey-mixi2-link && docker compose logs -f"` |
-| 再起動 | `ssh arona "cd ~/misskey-mixi2-link && docker compose restart"` |
-| 再デプロイ | `task deploy` |
+| ログ確認 | `ssh arona "cd ~/connections/misskey-mixi2-link && docker compose logs -f"` |
+| 再起動 | `ssh arona "cd ~/connections/misskey-mixi2-link && docker compose restart"` |
+| 再デプロイ | `task deploy:misskey-mixi2-link` |
 
 ### 障害切り分けの第一手
 

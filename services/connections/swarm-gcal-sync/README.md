@@ -2,11 +2,11 @@
 
 Swarm (Foursquare) のチェックイン履歴を Google カレンダーに同期する常駐サービス。毎日 JST 0:00 に前日分を取り込み、初回はバックフィルで過去の全履歴を取り込む。
 
-新規 LXC は払い出さず、`arona` (pve01, VMID 100) 上の Docker で常駐させる ([discord-bot](../connections/discord-bot/) と同じ形式)。外部公開はしない (送信のみ)。
+新規 LXC は払い出さず、`arona` (pve02, VMID 100) 上の Docker で常駐させる ([discord-bot](../discord-bot/) / [misskey-mixi2-link](../misskey-mixi2-link/) と同じ形式)。外部公開はしない (送信のみ)。
 
 | 稼働先          | デプロイ形式                       | 配置                         |
 | --------------- | ---------------------------------- | ---------------------------- |
-| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/swarm-gcal-sync` (Taskfile で転送) |
+| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/connections/swarm-gcal-sync` (Taskfile で転送) |
 
 リソース割り当て (arona の cores / RAM 等) は [`../../terraform/`](../../terraform/) を正とする。
 
@@ -19,7 +19,7 @@ Swarm (Foursquare) のチェックイン履歴を Google カレンダーに同�
 ## 前提
 
 - `arona` に SSH (`ssh arona`) で入れて Docker / Docker Compose v2 が使えること。
-- ローカルに Go 1.24 と [Task](https://taskfile.dev/) があること。
+- ローカルに Go 1.25 と [Task](https://taskfile.dev/) があること。
 - Google Cloud プロジェクトで **Google Calendar API** を有効化し、**サービスアカウント**を作成して JSON 鍵をダウンロード済みであること (無人運用のため OAuth ではなく SA を使う。トークン失効が無い)。
 - [Foursquare 開発者ポータル](https://foursquare.com/developers/)でアプリを作成し、Redirect URI に `http://127.0.0.1:8765/callback` を登録済みであること。
 
@@ -76,7 +76,7 @@ go run . -once       # 直近のチェックインを 1 回だけ同期 (再実�
 ## arona へのデプロイ
 
 ```sh
-task deploy          # ソース・Dockerfile・compose.yml・.env・secrets/ を転送し docker compose up -d --build
+task deploy:swarm-gcal-sync   # services/connections で実行。ソース・Dockerfile・compose.yml・.env・secrets/ を転送し docker compose up -d --build
 ```
 
 `.env` と `secrets/` (SA 鍵・Foursquare トークン) も転送される。デプロイ後、コンテナは常駐し毎日 JST 0:00 に同期する。
@@ -86,17 +86,17 @@ task deploy          # ソース・Dockerfile・compose.yml・.env・secrets/ �
 過去の全履歴を一度だけ取り込む:
 
 ```sh
-task backfill        # arona 上で docker compose run --rm sync -backfill
+task backfill:swarm-gcal-sync   # arona 上で docker compose run --rm sync -backfill
 ```
 
 ## 運用メモ
 
 | 操作 | コマンド |
 | --- | --- |
-| ログ確認 | `ssh arona "cd ~/swarm-gcal-sync && docker compose logs -f"` |
-| 再起動 | `ssh arona "cd ~/swarm-gcal-sync && docker compose restart"` |
-| 再デプロイ | `task deploy` |
-| 手動で増分同期 | `ssh arona "cd ~/swarm-gcal-sync && docker compose run --rm sync -once"` |
+| ログ確認 | `ssh arona "cd ~/connections/swarm-gcal-sync && docker compose logs -f"` |
+| 再起動 | `ssh arona "cd ~/connections/swarm-gcal-sync && docker compose restart"` |
+| 再デプロイ | `task deploy:swarm-gcal-sync` |
+| 手動で増分同期 | `ssh arona "cd ~/connections/swarm-gcal-sync && docker compose run --rm sync -once"` |
 
 ### 障害切り分けの第一手
 
@@ -104,5 +104,5 @@ task backfill        # arona 上で docker compose run --rm sync -backfill
 | --- | --- |
 | イベントが増えない | `docker compose logs` で「増分完了: N 件取得」の件数。0 件ならトークン失効か対象期間にチェックインが無い |
 | Google 401/403/404 | カレンダーが SA に共有されているか (「予定の変更権限」)、`GOOGLE_CALENDAR_ID` と `credentials.json` が正しいかを確認 |
-| Foursquare がエラー | トークン失効。`-foursquare-auth` で取り直して `task deploy` |
+| Foursquare がエラー | トークン失効。`-foursquare-auth` で取り直して `task deploy:swarm-gcal-sync` |
 | 時刻がずれる | チェックインの `timeZoneOffset` を開始時刻に使う。`EVENT_DURATION_MINUTES` で長さ調整 |
