@@ -18,7 +18,7 @@
 | dawarich | [`dawarich/`](./dawarich/README.md) | 位置情報トラッキング (PostGIS + Redis + Sidekiq, Docker Compose) | 224 |
 | Status Page | [`status-page/`](./status-page/README.md) | サービス稼働状況・リソース使用量の収集と公開 | — |
 | discord-bot | `connections/discord-bot/` (README 未整備) | Discord bot (fun-council: リマインダー / ロール自動付与)。arona 上で Docker 常駐 | — |
-| swarm-gcal-sync | [`swarm-gcal-sync/`](./swarm-gcal-sync/README.md) | Swarm チェックイン → Google カレンダー同期。arona 上で Docker 常駐 | — |
+| swarm-gcal-sync | [`connections/swarm-gcal-sync/`](./connections/swarm-gcal-sync/README.md) | Swarm チェックイン → Google カレンダー同期。arona 上で Docker 常駐 | — |
 
 ## ゲスト (VM / LXC) 一覧
 

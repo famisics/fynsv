@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/mixigroup/mixi2-application-sdk-go/auth"
+	"github.com/mixigroup/mixi2-application-sdk-go/event/stream"
 	constv1 "github.com/mixigroup/mixi2-application-sdk-go/gen/go/social/mixi/application/const/v1"
 	modelv1 "github.com/mixigroup/mixi2-application-sdk-go/gen/go/social/mixi/application/model/v1"
 	apiv1 "github.com/mixigroup/mixi2-application-sdk-go/gen/go/social/mixi/application/service/application_api/v1"
 	streamv1 "github.com/mixigroup/mixi2-application-sdk-go/gen/go/social/mixi/application/service/application_stream/v1"
-	"github.com/mixigroup/mixi2-application-sdk-go/event/stream"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
