@@ -1,4 +1,4 @@
-module github.com/famisics/fynsv/services/discord-bot
+module github.com/famisics/fynsv/services/connections
 
 go 1.25.0
 
