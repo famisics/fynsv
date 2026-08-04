@@ -15,3 +15,9 @@ tasks:
     cmds:
       - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata go.mod go.sum shared/discord-bot discord-bot/fun-council/Dockerfile discord-bot/fun-council/compose.yml discord-bot/fun-council/main.go discord-bot/fun-council/rolesync.go discord-bot/fun-council/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
       - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/discord-bot/fun-council && docker compose up -d --build"
+
+  deploy:misskey-mixi2-link:
+    desc: misskey-mixi2-link を arona に転送してビルド・再起動する
+    cmds:
+      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata go.mod go.sum shared/misskey misskey-mixi2-link/main.go misskey-mixi2-link/config misskey-mixi2-link/logging misskey-mixi2-link/retry misskey-mixi2-link/store misskey-mixi2-link/mixi2 misskey-mixi2-link/bridge misskey-mixi2-link/Dockerfile misskey-mixi2-link/compose.yml misskey-mixi2-link/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
+      - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/misskey-mixi2-link && docker compose up -d --build"

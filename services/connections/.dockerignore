@@ -1,3 +1,3 @@
 misskey/
-misskey-mixi2-link/
-.env
+**/node_modules
+**/.env

@@ -1,12 +1,10 @@
-FROM oven/bun:1-alpine AS deps
-WORKDIR /app
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile --production
+FROM golang:1.25-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN go build -o /bridge ./misskey-mixi2-link
 
-FROM oven/bun:1-alpine
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY package.json bun.lock tsconfig.json ./
-COPY src ./src
-USER bun
-CMD ["bun", "src/index.ts"]
+FROM alpine:3.21
+COPY --from=build /bridge /bridge
+CMD ["/bridge"]
