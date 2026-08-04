@@ -5,17 +5,16 @@ import (
 	"database/sql"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/tursodatabase/libsql-client-go/libsql"
 
 	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/bridge"
 	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/config"
-	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/logging"
 	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/mixi2"
 	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/store"
+	"github.com/famisics/fynsv/services/connections/shared/logging"
 	sharedmisskey "github.com/famisics/fynsv/services/connections/shared/misskey"
+	"github.com/famisics/fynsv/services/connections/shared/runutil"
 )
 
 func openTursoDB(url, authToken string) (*sql.DB, error) {
@@ -101,9 +100,7 @@ func main() {
 	mixi2Ctx, cancelMixi2 := context.WithCancel(context.Background())
 	go mixi2Client.Watch(mixi2Ctx, mixi2ToMisskey.HandleMentionedPost, logger)
 
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
-	sig := <-sc
+	sig := runutil.WaitForSignal()
 
 	// Shutdown mirrors the TS version: no draining of in-flight work.
 	logger.Info("shutting down", "signal", sig.String())

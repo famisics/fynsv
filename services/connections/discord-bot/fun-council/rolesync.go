@@ -1,7 +1,6 @@
 package main
 
 import (
-  "log"
   "time"
 
   "github.com/bwmarrin/discordgo"
@@ -60,7 +59,7 @@ func runRoleSync(s *discordgo.Session) {
   for {
     members, err := s.GuildMembers(roleSyncGuildID, after, 1000)
     if err != nil {
-      log.Printf("ロール同期: メンバー一覧の取得に失敗しました: %v", err)
+      logger.Error("ロール同期: メンバー一覧の取得に失敗しました", "error", err.Error())
       return
     }
     if len(members) == 0 {
@@ -80,7 +79,7 @@ func runRoleSync(s *discordgo.Session) {
         }
         if hasSource && !hasTarget {
           if err := s.GuildMemberRoleAdd(roleSyncGuildID, m.User.ID, rule.targetRoleID); err != nil {
-            log.Printf("ロール同期: %s へのロール %s 付与に失敗しました: %v", m.User.ID, rule.targetRoleID, err)
+            logger.Error("ロール同期: ロール付与に失敗しました", "member", m.User.ID, "role", rule.targetRoleID, "error", err.Error())
             continue
           }
           added++
@@ -92,6 +91,6 @@ func runRoleSync(s *discordgo.Session) {
     }
   }
   if added > 0 {
-    log.Printf("ロール同期: %d 件のロールを付与しました", added)
+    logger.Info("ロール同期: ロールを付与しました", "count", added)
   }
 }

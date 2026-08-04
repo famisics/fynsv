@@ -2,13 +2,15 @@ package reminder
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/famisics/fynsv/services/connections/shared/logging"
 )
 
 var jst = time.FixedZone("Asia/Tokyo", 9*60*60)
+
+var logger = logging.New()
 
 var Command = &discordgo.ApplicationCommand{
 	Name:        "remind",
@@ -80,7 +82,7 @@ func Handler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	time.AfterFunc(delay, func() {
 		if _, err := s.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> リマインド: %s", userID, message)); err != nil {
-			log.Printf("リマインダー送信に失敗しました: %v", err)
+			logger.Error("リマインダー送信に失敗しました", "error", err.Error())
 		}
 	})
 

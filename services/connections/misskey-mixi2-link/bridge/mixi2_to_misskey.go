@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/mixi2"
-	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/retry"
+	"github.com/famisics/fynsv/services/connections/shared/retry"
 	"github.com/famisics/fynsv/services/connections/misskey-mixi2-link/store"
 	sharedmisskey "github.com/famisics/fynsv/services/connections/shared/misskey"
 )

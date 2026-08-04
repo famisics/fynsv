@@ -5,16 +5,19 @@ import (
 	"flag"
 	"log"
 	"os"
-	"os/signal"
 	"strconv"
-	"syscall"
 	"time"
 
 	"github.com/robfig/cron/v3"
+
+	"github.com/famisics/fynsv/services/connections/shared/logging"
+	"github.com/famisics/fynsv/services/connections/shared/runutil"
 )
 
 // jst はスケジューラ用の固定タイムゾーン (JST は DST がないため FixedZone で十分)。
 var jst = time.FixedZone("Asia/Tokyo", 9*60*60)
+
+var logger = logging.New()
 
 // incrementalLookback は毎日の増分同期で遡る範囲。tick 時刻のずれを吸収するため 1 時間重ねる。
 const incrementalLookback = 25 * time.Hour
@@ -98,17 +101,15 @@ func (a *app) runDaemon() {
 	c := cron.New(cron.WithLocation(jst))
 	if _, err := c.AddFunc("0 0 * * *", func() {
 		if err := a.syncIncremental(); err != nil {
-			log.Printf("増分同期に失敗: %v", err)
+			logger.Error("増分同期に失敗", "error", err.Error())
 		}
 	}); err != nil {
 		log.Fatalf("cron 登録に失敗: %v", err)
 	}
 	c.Start()
-	log.Println("起動しました。毎日 JST 0:00 に同期します")
+	logger.Info("起動しました。毎日 JST 0:00 に同期します")
 
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
-	<-sc
+	runutil.WaitForSignal()
 
 	ctx := c.Stop()
 	<-ctx.Done()
@@ -144,6 +145,6 @@ func (a *app) upsertAll(checkins []Checkin, label string) error {
 			created++
 		}
 	}
-	log.Printf("%s完了: %d 件取得 / %d 件登録 / %d 件更新", label, len(checkins), created, updated)
+	logger.Info(label+"完了", "fetched", len(checkins), "created", created, "updated", updated)
 	return nil
 }
