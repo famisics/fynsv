@@ -1,10 +1,13 @@
-package main
+package rolesync
 
 import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/famisics/fynsv/services/connections/shared/logging"
 )
+
+var logger = logging.New()
 
 const (
 	roleSyncInterval = 15 * time.Minute
@@ -43,8 +46,8 @@ var roleSyncRules = []roleSyncRule{
 	},
 }
 
-// startRoleSync は roleSyncRules に従いロールを付与するジョブを roleSyncInterval おきに実行する。
-func startRoleSync(s *discordgo.Session) {
+// Start は roleSyncRules に従いロールを付与するジョブを roleSyncInterval おきに実行する。
+func Start(s *discordgo.Session) {
 	go func() {
 		for {
 			runRoleSync(s)

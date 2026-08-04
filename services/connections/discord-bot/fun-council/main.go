@@ -5,7 +5,8 @@ import (
 	"os"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/famisics/fynsv/services/connections/discord-bot/fun-council/reminder"
+	"github.com/famisics/fynsv/services/connections/discord-bot/fun-council/features/reminder"
+	"github.com/famisics/fynsv/services/connections/discord-bot/fun-council/features/rolesync"
 	"github.com/famisics/fynsv/services/connections/shared/logging"
 	"github.com/famisics/fynsv/services/connections/shared/runutil"
 )
@@ -30,7 +31,7 @@ func main() {
 	}
 	defer dg.Close()
 
-	startRoleSync(dg)
+	rolesync.Start(dg)
 
 	existing, _ := dg.ApplicationCommands(dg.State.User.ID, "")
 	registered := map[string]bool{reminder.Command.Name: true}
