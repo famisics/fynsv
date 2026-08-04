@@ -28,6 +28,7 @@ type Note struct {
 	RenoteID   *string    `json:"renoteId"`
 	Visibility string     `json:"visibility"`
 	Files      []NoteFile `json:"files"`
+	Tags       []string   `json:"tags"`
 }
 
 // Client is a Misskey REST API client authenticated with a single token.
