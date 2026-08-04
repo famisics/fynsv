@@ -47,7 +47,7 @@ docker compose up -d
 
 ## cloudflared に Public Hostname を追加
 
-`arona` の cloudflared は **token 方式 (remote-managed tunnel)** で動いており、ingress はすべて Cloudflare Zero Trust ダッシュボードで管理する ([misskey/README.md](../misskey/README.md) §5 と同じ。コンテナ側に cloudflared は入れない)。MySQL プロトコルは HTTP ではなく生 TCP なので、Service Type は `TCP` を選ぶ。
+`arona` の cloudflared は **token 方式 (remote-managed tunnel)** で動いており、ingress はすべて Cloudflare Zero Trust ダッシュボードで管理する ([misskey/README.md](../connections/misskey/README.md) §5 と同じ。コンテナ側に cloudflared は入れない)。MySQL プロトコルは HTTP ではなく生 TCP なので、Service Type は `TCP` を選ぶ。
 
 ### 実行場所: Cloudflare Zero Trust ダッシュボード
 

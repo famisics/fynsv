@@ -1,17 +1,17 @@
 # misskey-mixi2-link 構成 (Misskey ⇔ mixi2 投稿ブリッジ)
 
-see also [../README.md](../README.md) / [../misskey/README.md](../misskey/README.md)
+see also [../../README.md](../../README.md) / [../misskey/README.md](../misskey/README.md)
 
-[services README](../README.md) で説明したクラスタ FYNSV 上の Misskey ([../misskey/README.md](../misskey/README.md)) と
+[services README](../../README.md) で説明したクラスタ FYNSV 上の Misskey ([../misskey/README.md](../misskey/README.md)) と
 [mixi2](https://mixi.social) の間で投稿を相互コピーするブリッジ。本体は TypeScript / [Bun](https://bun.sh) 製でこのディレクトリに同梱する。
 
-新規 LXC は払い出さず、`arona` (pve01, VMID 100) 上の Docker で常駐させる ([swarm-gcal-sync](../swarm-gcal-sync/) / [discord-bot](../discord-bot/) と同じ形式)。外部公開はしない (送信のみ)。
+新規 LXC は払い出さず、`arona` (pve01, VMID 100) 上の Docker で常駐させる ([swarm-gcal-sync](../../swarm-gcal-sync/) / [discord-bot](../discord-bot/) と同じ形式)。外部公開はしない (送信のみ)。
 
 | 稼働先           | デプロイ形式                                      | 配置                                  |
 | ---------------- | ------------------------------------------------- | ------------------------------------- |
 | `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/misskey-mixi2-link` (Taskfile で転送) |
 
-リソース割り当て (arona の cores / RAM 等) は [`../../terraform/`](../../terraform/) を正とする。
+リソース割り当て (arona の cores / RAM 等) は [`../../../terraform/`](../../../terraform/) を正とする。
 
 ## 動作仕様
 

@@ -217,7 +217,7 @@ git commit -m "docs: pgconsole の構築手順を追記"
 **Interfaces:**
 - Produces: `psql.uiro.dev` → 192.168.2.212:5432 (`arona` の既存 cloudflared 経由。クライアントは `cloudflared access tcp` で接続)
 
-`arona` の cloudflared は token 方式 (remote-managed tunnel) で稼働しており、コンテナ側に cloudflared を入れる必要はない ([misskey/README.md](../../../services/misskey/README.md) §5、[obsidian-livesync/README.md](../../../services/obsidian-livesync/README.md) §3 と同じ方式)。ingress は Cloudflare Zero Trust ダッシュボードで管理する。
+`arona` の cloudflared は token 方式 (remote-managed tunnel) で稼働しており、コンテナ側に cloudflared を入れる必要はない ([misskey/README.md](../../../services/connections/misskey/README.md) §5、[obsidian-livesync/README.md](../../../services/obsidian-livesync/README.md) §3 と同じ方式)。ingress は Cloudflare Zero Trust ダッシュボードで管理する。
 
 - [ ] **Step 1: Public Hostname を追加** — 実行場所: Cloudflare Zero Trust ダッシュボード
   - **Zero Trust > Networks > Tunnels** → arona のトンネル → **Configure** > **Public Hostnames** > **Add a public hostname**

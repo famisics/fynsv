@@ -1,14 +1,14 @@
 # Misskey 構成
 
-[services README](../README.md) で説明したクラスタ FYNSV 上に、Misskey を以下の 3 LXC 構成で構築する。
+[services README](../../README.md) で説明したクラスタ FYNSV 上に、Misskey を以下の 3 LXC 構成で構築する。
 
-| VMID | ホスト名        | 役割                      | TF リソース ([containers.tf](../../terraform/containers.tf)) |
+| VMID | ホスト名        | 役割                      | TF リソース ([containers.tf](../../../terraform/containers.tf)) |
 | ---- | --------------- | ------------------------- | ------------------------------------------------------------ |
 | 211  | `misskey-db`    | PostgreSQL 17             | `module.lxc["misskey-db"]`                                    |
 | 212  | `misskey-redis` | Redis 7                   | `module.lxc["misskey-redis"]`                                 |
 | 210  | `misskey-web`   | Misskey 本体 (Node.js 22) | `module.lxc["misskey-web"]`                                   |
 
-リソース割り当て (ノード / IP / cores / RAM / rootfs / features) は [`../../terraform/`](../../terraform/) を正とする。
+リソース割り当て (ノード / IP / cores / RAM / rootfs / features) は [`../../../terraform/`](../../../terraform/) を正とする。
 
 公開は `arona` (pve01, VMID 100) で稼働中の `cloudflared` に ingress を追加し、`misskey.<your-domain>` → `http://192.168.2.203:3000` に向ける。
 
@@ -22,7 +22,7 @@
 
 ## 1. LXC (Terraform 管理)
 
-3 LXC の構成は `terraform import` 済みで、[`../../terraform/containers.tf`](../../terraform/containers.tf) の `local.containers` が正。リソース割り当ての変更・再作成は Terraform で行う ([terraform/README.md](../../terraform/README.md))。
+3 LXC の構成は `terraform import` 済みで、[`../../../terraform/containers.tf`](../../../terraform/containers.tf) の `local.containers` が正。リソース割り当ての変更・再作成は Terraform で行う ([terraform/README.md](../../../terraform/README.md))。
 
 ## 2. misskey-db (PostgreSQL 17) 構築
 
@@ -352,7 +352,7 @@ acl = private
 | LXC 210 (web)   | 不要     | アプリケーションコードは git clone + 本 README の手順で再現可能。`/opt/misskey/files` は R2 移行済みなら空 (Section 7 参照) |
 | R2 (メディア)   | 不要     | Cloudflare 側で冗長化済み                                                                                                  |
 
-vzdump の保存先 `local` は node-local ストレージのため、ゲストが乗るノード自体が壊れると同じノード上の vzdump も道連れで失われる (詳細は [`../README.md`](../README.md) のストレージ構成参照)。misskey-db は一次データを持つ唯一のゲストなので、この穴を避けるためオフサイト (クラスタ外) の R2 にもバックアップする。
+vzdump の保存先 `local` は node-local ストレージのため、ゲストが乗るノード自体が壊れると同じノード上の vzdump も道連れで失われる (詳細は [`../../README.md`](../../README.md) のストレージ構成参照)。misskey-db は一次データを持つ唯一のゲストなので、この穴を避けるためオフサイト (クラスタ外) の R2 にもバックアップする。
 
 vzdump は Datacenter > Backup でジョブを組むか、各ノードで `vzdump 211 --storage <backup-storage> --mode snapshot` を cron に置く。
 
