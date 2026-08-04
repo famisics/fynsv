@@ -8,7 +8,7 @@ Swarm (Foursquare) のチェックイン履歴を Google カレンダーに同�
 | --------------- | ---------------------------------- | ---------------------------- |
 | `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/connections/swarm-gcal-sync` (Taskfile で転送) |
 
-リソース割り当て (arona の cores / RAM 等) は [`../../terraform/`](../../terraform/) を正とする。
+リソース割り当て (arona の cores / RAM 等) は [`../../../terraform/`](../../../terraform/) を正とする。
 
 ## 動作概要
 
