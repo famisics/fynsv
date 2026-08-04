@@ -7,7 +7,7 @@ import (
   "syscall"
 
   "github.com/bwmarrin/discordgo"
-  "github.com/famisics/fynsv/services/connections/shared/discord-bot/reminder"
+  "github.com/famisics/fynsv/services/connections/discord-bot/fun-council/reminder"
 )
 
 func main() {
