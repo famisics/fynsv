@@ -10,7 +10,7 @@
 
 | サービス | ディレクトリ | 役割 | ゲスト (VMID) |
 | --- | --- | --- | --- |
-| Misskey | [`connections/misskey/`](./connections/misskey/README.md) | Misskey 本体 / PostgreSQL / Redis の 3 LXC 構成 | 210 / 211 / 212 |
+| Misskey | [`misskey/`](./misskey/README.md) | Misskey 本体 / PostgreSQL / Redis の 3 LXC 構成 | 210 / 211 / 212 |
 | misskey-mixi2-link | [`connections/misskey-mixi2-link/`](./connections/misskey-mixi2-link/README.md) | Misskey ⇔ mixi2 投稿ブリッジ。arona 上で Docker 常駐 | — |
 | Obsidian LiveSync | [`obsidian-livesync/`](./obsidian-livesync/README.md) | CouchDB (Obsidian Self-hosted LiveSync バックエンド) | 213 |
 | mysql | [`mysql/`](./mysql/README.md) | MariaDB + phpMyAdmin (共有 DB 基盤) | 214 |
@@ -41,7 +41,7 @@
 | 223  | lxc  | `kei`                | pve03  | 開発用途                                        |
 | 224  | lxc  | `dawarich`           | pve03  | dawarich (位置情報トラッキング、Docker Compose) |
 
-各ゲスト内部の構築・運用は対応するサービス文書を正とする: [misskey](./connections/misskey/README.md) (210/211/212) / [obsidian-livesync](./obsidian-livesync/README.md) (213) / [mysql](./mysql/README.md) (214) / [coolify](./coolify/README.md) (220/221) / [dawarich](./dawarich/README.md) (224)。arona (VM 100) 上で Docker 常駐する misskey-mixi2-link / swarm-gcal-sync / discord-bot はゲスト表に個別 VMID を持たず、[connections/README.md](./connections/README.md) の索引を正とする。
+各ゲスト内部の構築・運用は対応するサービス文書を正とする: [misskey](./misskey/README.md) (210/211/212) / [obsidian-livesync](./obsidian-livesync/README.md) (213) / [mysql](./mysql/README.md) (214) / [coolify](./coolify/README.md) (220/221) / [dawarich](./dawarich/README.md) (224)。arona (VM 100) 上で Docker 常駐する misskey-mixi2-link / swarm-gcal-sync / discord-bot はゲスト表に個別 VMID を持たず、[connections/README.md](./connections/README.md) の索引を正とする。
 
 ### 公開口 arona (VM 100)
 

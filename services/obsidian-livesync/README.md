@@ -129,7 +129,7 @@ LAN からの到達性は pve03 ホスト等から `curl -o /dev/null -w "%{http
 
 ## 3. cloudflared に Public Hostname を追加
 
-`arona` の cloudflared は **token 方式 (remote-managed tunnel)** で動いており、ingress はすべて Cloudflare Zero Trust ダッシュボードで管理する ([misskey/README.md](../connections/misskey/README.md) §5 と同じ。ローカル `config.yml` は持たない)。
+`arona` の cloudflared は **token 方式 (remote-managed tunnel)** で動いており、ingress はすべて Cloudflare Zero Trust ダッシュボードで管理する ([misskey/README.md](../misskey/README.md) §5 と同じ。ローカル `config.yml` は持たない)。
 
 ### 実行場所: Cloudflare Zero Trust ダッシュボード
 

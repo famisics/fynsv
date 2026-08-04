@@ -7,7 +7,6 @@
 | ディレクトリ | 役割 |
 | --- | --- |
 | [`discord-bot/`](./discord-bot/) | Discord bot (fun-council: リマインダー / ロール自動付与)。arona 上で Docker 常駐 |
-| [`misskey/`](./misskey/README.md) | Misskey 本体 / PostgreSQL / Redis の 3 LXC 構成 |
 | [`misskey-mixi2-link/`](./misskey-mixi2-link/README.md) | Misskey ⇔ mixi2 投稿ブリッジ。arona 上で Docker 常駐 |
 | [`swarm-gcal-sync/`](./swarm-gcal-sync/README.md) | Swarm チェックイン → Google カレンダー同期。arona 上で Docker 常駐 |
 | `shared/` | 複数サービスで共通利用する Go パッケージ (`shared/<パッケージ名>/...`)。`logging` (JSON ログ), `retry` (指数バックオフ), `runutil` (シグナル待ち), `misskey` (Misskey REST/streaming クライアント) |
