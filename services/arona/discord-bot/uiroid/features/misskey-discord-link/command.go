@@ -28,6 +28,9 @@ var Command = &discordgo.ApplicationCommand{
 					Required:    true,
 					ChannelTypes: []discordgo.ChannelType{
 						discordgo.ChannelTypeGuildText,
+						discordgo.ChannelTypeGuildPublicThread,
+						discordgo.ChannelTypeGuildPrivateThread,
+						discordgo.ChannelTypeGuildNewsThread,
 					},
 				},
 			},
