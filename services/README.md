@@ -16,7 +16,6 @@
 | mysql | [`mysql/`](./mysql/README.md) | MariaDB + phpMyAdmin (共有 DB 基盤) | 214 |
 | Coolify | [`coolify/`](./coolify/README.md) | コントロールプレーン / アプリ実行サーバー | 220 / 221 |
 | dawarich | [`dawarich/`](./dawarich/README.md) | 位置情報トラッキング (PostGIS + Redis + Sidekiq, Docker Compose) | 224 |
-| supabase-kakei | [`supabase-kakei/`](./supabase-kakei/README.md) | ui-dev-kakei 用セルフホスト Supabase (Docker Compose) | 225 |
 | Status Page | [`status-page/`](./status-page/README.md) | サービス稼働状況・リソース使用量の収集と公開 | — |
 | discord-bot | [`arona/discord-bot/`](./arona/discord-bot/) | Discord bot (fun-council: リマインダー / ロール自動付与、uiroid: Misskey のハッシュタグ投稿を Discord に転送)。arona 上で Docker 常駐 | — |
 | swarm-gcal-sync | [`arona/swarm-gcal-sync/`](./arona/swarm-gcal-sync/README.md) | Swarm チェックイン → Google カレンダー同期。arona 上で Docker 常駐 | — |
@@ -41,9 +40,8 @@
 | 222  | lxc  | `dokploy`            | pve01  | Dokploy (PaaS、詳細未整理、stopped)             |
 | 223  | lxc  | `kei`                | pve03  | 開発用途                                        |
 | 224  | lxc  | `dawarich`           | pve03  | dawarich (位置情報トラッキング、Docker Compose) |
-| 225  | lxc  | `supabase-kakei`     | pve01  | ui-dev-kakei 用セルフホスト Supabase (Docker Compose) |
 
-各ゲスト内部の構築・運用は対応するサービス文書を正とする: [misskey](./misskey/README.md) (210/211/212) / [obsidian-livesync](./obsidian-livesync/README.md) (213) / [mysql](./mysql/README.md) (214) / [coolify](./coolify/README.md) (220/221) / [dawarich](./dawarich/README.md) (224) / [supabase-kakei](./supabase-kakei/README.md) (225)。arona (VM 100) 上で Docker 常駐する misskey-mixi2-link / swarm-gcal-sync / discord-bot はゲスト表に個別 VMID を持たず、[arona/README.md](./arona/README.md) の索引を正とする。
+各ゲスト内部の構築・運用は対応するサービス文書を正とする: [misskey](./misskey/README.md) (210/211/212) / [obsidian-livesync](./obsidian-livesync/README.md) (213) / [mysql](./mysql/README.md) (214) / [coolify](./coolify/README.md) (220/221) / [dawarich](./dawarich/README.md) (224)。arona (VM 100) 上で Docker 常駐する misskey-mixi2-link / swarm-gcal-sync / discord-bot はゲスト表に個別 VMID を持たず、[arona/README.md](./arona/README.md) の索引を正とする。
 
 ### 公開口 arona (VM 100)
 

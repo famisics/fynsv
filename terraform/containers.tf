@@ -106,15 +106,6 @@ locals {
       target_node = "pve03"
       ip_address  = "192.168.2.213/24"
     }
-
-    supabase-kakei = {
-      vm_id       = 225
-      target_node = "pve01"
-      memory      = 4096
-      swap        = 2048
-      disk_size   = 32
-      ip_address  = "192.168.2.214/24"
-    }
   }
 
   container_defaults = {
