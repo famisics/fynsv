@@ -35,7 +35,7 @@ locals {
     misskey-web = {
       vm_id       = 210
       target_node = "pve03"
-      swap = 2048
+      swap        = 2048
       disk_size   = 32
       firewall    = false
       ip_address  = "192.168.2.203/24"
@@ -77,10 +77,11 @@ locals {
     }
 
     dokploy = {
-      vm_id       = 222
-      target_node = "pve01"
-      ip_address  = "192.168.2.210/24"
-      started     = false
+      vm_id         = 222
+      target_node   = "pve01"
+      ip_address    = "192.168.2.210/24"
+      start_on_boot = false
+      started       = false
     }
 
     kei = {
@@ -123,7 +124,7 @@ locals {
     nesting          = true # Docker は nesting=1 だけで動く (keyctl 等は API トークンでは設定不可)
     keyctl           = false
     started          = true # false にすると apply 時にシャットダウンする
-    start_on_boot    = true
+    start_on_boot    = true # false にすると Proxmox の自動起動設定を外す
     tags             = ["terraform"]
     provision        = true # 作成後に apt ベースライン / ロケール / TZ を流す
   }
