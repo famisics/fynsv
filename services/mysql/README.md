@@ -21,7 +21,9 @@ LAN からの接続を受け付けるため `bind-address` を変更している
 bind-address            = 0.0.0.0
 ```
 
-管理ユーザー `admin` (`ALL PRIVILEGES WITH GRANT OPTION`) を作成済み。ホストは phpMyAdmin の Docker bridge 経由の自己接続用に `192.168.2.212`、LAN 用に `192.168.2.%` の2つを許可している。パスワードはコンテナ内 `/root/.admin_mysql_password` に保存しており、リポジトリにはコミットしない。
+- 管理ユーザー `admin` (`ALL PRIVILEGES WITH GRANT OPTION`) を作成済み
+- ホストは phpMyAdmin の Docker bridge 経由の自己接続用に `192.168.2.212`、LAN 用に `192.168.2.%` の2つを許可
+- パスワードはコンテナ内 `/root/.admin_mysql_password` に保存しており、リポジトリにはコミットしない
 
 DB ごとの発行スクリプトや readonly ロールの自動化は用意していない。
 

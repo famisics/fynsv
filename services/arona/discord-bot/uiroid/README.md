@@ -2,13 +2,7 @@
 
 本人の Misskey アカウント (`@uiroid`) 用の Discord bot。`/misskey-link` スラッシュコマンドで設定したハッシュタグ付きの本人ノートを、設定したチャンネルに転送する。
 
-新規 LXC は払い出さず、`arona` (pve02, VMID 100) 上の Docker で常駐させる ([fun-council](../fun-council/) / [misskey-mixi2-link](../../misskey-mixi2-link/) と同じ形式)。外部公開はしない (Discord Gateway への outbound と Misskey Streaming API への outbound のみ)。
-
-| 稼働先           | デプロイ形式                                      | 配置                          |
-| ---------------- | -------------------------------------------------- | ----------------------------- |
-| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/discord-bot/uiroid` (Taskfile で転送) |
-
-リソース割り当て (arona の cores / RAM 等) は [`../../../terraform/`](../../../terraform/) を正とする。
+配置先: `~/discord-bot/uiroid`。共通の稼働先・デプロイ形式・リソース割り当ての正・運用操作は [arona/README.md](../../README.md) を参照。外部公開はしない (Discord Gateway への outbound と Misskey Streaming API への outbound のみ)。
 
 ## 動作仕様
 
@@ -27,8 +21,8 @@
 
 ## 前提
 
-- `arona` に SSH (`ssh arona`) で入れて Docker / Docker Compose v2 が使えること。
-- ローカルに [Task](https://taskfile.dev/) があること (デプロイ用)。ビルド・テストを手元で回す場合は Go 1.25。
+共通の前提 (SSH / Docker Compose v2 / Go / Task) は [arona/README.md](../../README.md) を参照。加えて:
+
 - Discord Developer Portal で Bot を作成済みで、`applications.commands` / `bot` スコープと `Send Messages` 権限を付与してサーバーに招待済みであること。
 - Misskey の本人アカウントで API トークンを発行できること (`read:account` のみで足りる)。
 - 上記トークンはすべて 1Password 管理 (リポジトリ・ゲストには `.env` 以外に置かない)。
@@ -73,11 +67,7 @@ task deploy:uiroid   # services/arona で実行。ソース・Dockerfile・compo
 
 ## 運用メモ
 
-| 操作 | コマンド |
-| --- | --- |
-| ログ確認 | `ssh arona "cd ~/discord-bot/uiroid && docker compose logs -f"` |
-| 再起動 | `ssh arona "cd ~/discord-bot/uiroid && docker compose restart"` |
-| 再デプロイ | `task deploy:uiroid` |
+ログ確認・再起動・再デプロイは [arona/README.md](../../README.md) の共通パターン (`<dir>` = `discord-bot/uiroid`, `<name>` = `uiroid`) を参照。
 
 ### 障害切り分けの第一手
 

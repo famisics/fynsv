@@ -1,20 +1,14 @@
 # Misskey 構成
 
-[services README](../README.md) で説明したクラスタ FYNSV 上に、Misskey を以下の 3 LXC 構成で構築する。
+[services README](../README.md) で説明したクラスタ FYNSV 上に、Misskey を `misskey-web` (Node.js 22 本体) / `misskey-db` (PostgreSQL 17) / `misskey-redis` (Redis 7) の 3 LXC 構成で構築する。VMID / ノード / IP / リソース割り当ては [`../../terraform/containers.tf`](../../terraform/containers.tf) の `module.lxc["misskey-web"]` / `["misskey-db"]` / `["misskey-redis"]` エントリが正。
 
-| VMID | ホスト名        | 役割                      | TF リソース ([containers.tf](../../terraform/containers.tf)) |
-| ---- | --------------- | ------------------------- | ------------------------------------------------------------ |
-| 211  | `misskey-db`    | PostgreSQL 17             | `module.lxc["misskey-db"]`                                    |
-| 212  | `misskey-redis` | Redis 7                   | `module.lxc["misskey-redis"]`                                 |
-| 210  | `misskey-web`   | Misskey 本体 (Node.js 22) | `module.lxc["misskey-web"]`                                   |
-
-リソース割り当て (ノード / IP / cores / RAM / rootfs / features) は [`../../terraform/`](../../terraform/) を正とする。
-
-公開は `arona` (pve02, VMID 100) で稼働中の `cloudflared` に ingress を追加し、`misskey.<your-domain>` → `http://192.168.2.203:3000` に向ける。
+公開は `arona` で稼働中の `cloudflared` に ingress を追加し、`misskey.<your-domain>` → `http://192.168.2.203:3000` に向ける。
 
 ## 前提
 
-- 公開ホスト名 (本書では `misskey.example.com` とする) を切るドメインを Cloudflare で管理しており、Cloudflare Zero Trust ダッシュボードで `arona` のトンネルに対して **Public Hostname** を追加できる権限がある。DNS の CNAME はダッシュボードからの Public Hostname 追加で自動生成されるため、事前作業は不要
+- 公開ホスト名 (本書では `misskey.example.com` とする) を切るドメインを Cloudflare で管理している
+- Cloudflare Zero Trust ダッシュボードで `arona` のトンネルに対して **Public Hostname** を追加できる権限がある
+- DNS の CNAME はダッシュボードからの Public Hostname 追加で自動生成されるため、事前作業は不要
 - `root@pve02` / `root@pve03` / `arona` に SSH で入れる
 - LXC への root アクセスは Proxmox ノード経由 (`pct enter <vmid>`。SSH 鍵は投入しない)
 
@@ -216,7 +210,9 @@ journalctl -u misskey -f
 ExecStart=/usr/bin/cloudflared --no-autoupdate tunnel run --token eyJhIjo...
 ```
 
-この方式では ingress / Public Hostname の構成はすべて **Cloudflare Zero Trust ダッシュボード側で管理される**。ローカルに yaml を置いて `cloudflared tunnel ingress validate` で検証する流れは取らない (既存の supabase / archivebox が外部公開されていないのも、ダッシュボードに Public Hostname を切っていないため。LAN 内サービスとして閉じている意図的な構成)。
+この方式では ingress / Public Hostname の構成はすべて **Cloudflare Zero Trust ダッシュボード側で管理される**。ローカルに yaml を置いて `cloudflared tunnel ingress validate` で検証する流れは取らない。
+
+(参考: supabase / archivebox が外部公開されていないのも、ダッシュボードに Public Hostname を切っておらず LAN 内サービスとして閉じているため)
 
 ### 実行場所: Cloudflare Zero Trust ダッシュボード
 
@@ -298,12 +294,7 @@ Misskey は標準ではアップロードされたメディアを `/opt/misskey/
 | Path Style を使用             | **ON** ← R2 は path-style 必須                          |
 | ACL に public-read を設定     | **OFF** ← R2 は ACL `public-read` を 400 で弾く         |
 
-**保存** で完了。設定は即座に反映される (Misskey の restart 不要、DB の meta が更新されるだけ)。
-
-R2 固有の落とし穴 3 つ:
-- 「ACL に public-read を設定」を必ず OFF。ON のままだと PUT が 400 で失敗する
-- 「Path Style を使用」必ず ON。R2 は virtual-hosted style 非対応
-- Endpoint は `https://` を含めず `<ACCOUNT_ID>.r2.cloudflarestorage.com` のみ
+**保存** で完了。設定は即座に反映される (Misskey の restart 不要、DB の meta が更新されるだけ)。上表の「Path Style を使用」「ACL に public-read を設定」は特に間違えやすいので注意。
 
 `default.yml` の `objectStorage` セクションは混乱の元なので書かないこと。
 
@@ -352,7 +343,8 @@ acl = private
 | LXC 210 (web)   | 不要     | アプリケーションコードは git clone + 本 README の手順で再現可能。`/opt/misskey/files` は R2 移行済みなら空 (Section 7 参照) |
 | R2 (メディア)   | 不要     | Cloudflare 側で冗長化済み                                                                                                  |
 
-vzdump の保存先 `local` は node-local ストレージのため、ゲストが乗るノード自体が壊れると同じノード上の vzdump も道連れで失われる (詳細は [`../README.md`](../README.md) のストレージ構成参照)。misskey-db は一次データを持つ唯一のゲストなので、この穴を避けるためオフサイト (クラスタ外) の R2 にもバックアップする。
+- vzdump の保存先 `local` は node-local ストレージのため、ゲストが乗るノード自体が壊れると同じノード上の vzdump も道連れで失われる (詳細は [`../README.md`](../README.md) のストレージ構成参照)
+- misskey-db は一次データを持つ唯一のゲストなので、この穴を避けるためオフサイト (クラスタ外) の R2 にもバックアップする
 
 vzdump は Datacenter > Backup でジョブを組むか、各ノードで `vzdump 211 --storage <backup-storage> --mode snapshot` を cron に置く。
 

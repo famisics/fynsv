@@ -1,6 +1,7 @@
 # Coolify — コントロールプレーンとアプリ実行サーバーを分ける構成
 
-Coolify は「コントロールプレーン（Coolify 本体が動くサーバー）」と「アプリ実行サーバー（デプロイ対象のワークロードが動くサーバー）」を分離して運用できる。コントロールプレーンは SSH 経由でリモートサーバーを操作し、Docker コンテナのデプロイ・管理を行う。
+- コントロールプレーン（Coolify 本体が動くサーバー）とアプリ実行サーバー（デプロイ対象のワークロードが動くサーバー）を分離して運用する
+- コントロールプレーンは SSH 経由でリモートサーバーを操作し、Docker コンテナのデプロイ・管理を行う
 
 参考: <https://coolify.io/docs/get-started/installation#manual-installation>
 
@@ -24,8 +25,12 @@ Coolify は「コントロールプレーン（Coolify 本体が動くサーバ�
                                          └─────────────────────────┘
 ```
 
-- **コントロールプレーン**: Coolify のスタック一式（UI、DB、Redis、Realtime、proxy）を動かす。原則アプリは載せない。Web UI は **Tailscale 経由のみ**でアクセスし、ポートはインターネットに公開しない。
-- **アプリ実行サーバー**: Docker Engine だけがあればよい。Coolify が SSH で接続し、コンテナを起動する。公開アプリは **Cloudflare Tunnel** で `XXX.on.example.com` を割り当て、80/443 をインターネットに直接開けない。
+- **コントロールプレーン**
+  - Coolify のスタック一式（UI、DB、Redis、Realtime、proxy）を動かす。原則アプリは載せない
+  - Web UI は **Tailscale 経由のみ**でアクセスし、ポートはインターネットに公開しない
+- **アプリ実行サーバー**
+  - Docker Engine だけがあればよい。Coolify が SSH で接続し、コンテナを起動する
+  - 公開アプリは **Cloudflare Tunnel** で `XXX.on.example.com` を割り当て、80/443 をインターネットに直接開けない
 
 ## 前提・要件
 
@@ -129,7 +134,9 @@ docker compose \
 
 ### 1-8. 初期セットアップ
 
-`http://<コントロールプレーンの IP>:8000` にアクセスし、管理者アカウントを作成する。Tailscale をまだ入れていない場合はこの段階のみ一時的に IP 直アクセスしてよいが、後述の Tailscale 設定後は Tailscale IP / MagicDNS 名でアクセスし、8000 番のインターネット公開は閉じる。
+- `http://<コントロールプレーンの IP>:8000` にアクセスし、管理者アカウントを作成する
+- Tailscale をまだ入れていない場合はこの段階のみ一時的に IP 直アクセスしてよい
+- 後述の Tailscale 設定後は Tailscale IP / MagicDNS 名でアクセスし、8000 番のインターネット公開は閉じる
 
 ## 2. アプリ実行サーバーの追加（リモートサーバー）
 
@@ -203,7 +210,7 @@ sudo ufw allow 22/tcp                    # SSH（Tailscale に寄せるなら on
 sudo ufw enable
 ```
 
-`tailscale0` インターフェイスからの着信のみ許可することで、8000 等を個別に開けなくても tailnet 内からはアクセスでき、インターネットからは遮断される。
+`tailscale0` インターフェース単位で許可しているため、8000/6001/6002 を個別に `ufw allow` する必要はない (tailnet 経由の到達は通り、インターネットからの到達は default deny incoming で遮断される)。ポート個別に開けると tailnet 外からもアクセス可能になるため行わない。
 
 ### 3-3. アクセス
 
@@ -246,7 +253,9 @@ Public Hostname を追加すると、Cloudflare が `XXX.on.example.com` の DNS
 
 ### 4-4. Coolify 側のドメイン設定
 
-Coolify のアプリ設定で **Domains** に `https://XXX.on.example.com` を登録する。これで Traefik が該当ホストのリクエストを当該アプリへルーティングする。TLS は Cloudflare Edge が終端するため、オリジン側は HTTP のままでよい（Cloudflare の SSL/TLS モードは Flexible か、オリジン証明書を入れて Full）。
+- Coolify のアプリ設定で **Domains** に `https://XXX.on.example.com` を登録する。これで Traefik が該当ホストのリクエストを当該アプリへルーティングする
+- TLS は Cloudflare Edge が終端するため、オリジン側は HTTP のままでよい
+- Cloudflare の SSL/TLS モードは Flexible か、オリジン証明書を入れて Full にする
 
 ## 運用メモ
 

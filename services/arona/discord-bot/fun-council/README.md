@@ -2,13 +2,7 @@
 
 Discord bot。リマインダー登録 (`/remind`) とロール自動付与 (rolesync) の 2 機能を持つ。
 
-新規 LXC は払い出さず、`arona` (pve02, VMID 100) 上の Docker で常駐させる ([uiroid](../uiroid/) と同じ形式)。外部公開はしない。
-
-| 稼働先 | デプロイ形式 | 配置 |
-| --- | --- | --- |
-| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/discord-bot/fun-council` (Taskfile で転送) |
-
-リソース割り当て (arona の cores / RAM 等) は [`../../../terraform/`](../../../terraform/) を正とする。
+配置先: `~/discord-bot/fun-council`。共通の稼働先・デプロイ形式・リソース割り当ての正・運用操作は [arona/README.md](../../README.md) を参照。
 
 ## 機能
 
@@ -17,9 +11,9 @@ Discord bot。リマインダー登録 (`/remind`) とロール自動付与 (rol
 
 ## 前提
 
-- `arona` に SSH (`ssh arona`) で入れて Docker / Docker Compose v2 が使えること。
-- ローカルに Go 1.25 と [Task](https://taskfile.dev/) があること。
-- Discord Developer Portal で Bot を作成済みで、Bot Token と、対象サーバーへの招待 (Manage Roles を含む権限、rolesync 対象ロールより上位に Bot ロールを配置) が済んでいること。
+共通の前提 (SSH / Docker Compose v2 / Go / Task) は [arona/README.md](../../README.md) を参照。加えて:
+
+- Discord Developer Portal で Bot を作成済みで、Bot Token と、対象サーバーへの招待 (Manage Roles を含む権限、rolesync 対象ロールより上位に Bot ロールを配置) が済んでいること
 
 ## 環境変数 (`.env`)
 
@@ -46,11 +40,7 @@ task deploy:fun-council   # services/arona で実行。ソース・Dockerfile・
 
 ## 運用メモ
 
-| 操作 | コマンド |
-| --- | --- |
-| ログ確認 | `ssh arona "cd ~/discord-bot/fun-council && docker compose logs -f"` |
-| 再起動 | `ssh arona "cd ~/discord-bot/fun-council && docker compose restart"` |
-| 再デプロイ | `task deploy:fun-council` |
+ログ確認・再起動・再デプロイは [arona/README.md](../../README.md) の共通パターン (`<dir>` = `discord-bot/fun-council`, `<name>` = `fun-council`) を参照。
 
 ### 障害切り分けの第一手
 

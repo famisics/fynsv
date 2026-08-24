@@ -1,12 +1,11 @@
 # dawarich 構成
 
-[services README](../README.md) で説明したクラスタ FYNSV 上に、位置情報トラッキング・分析プラットフォーム [dawarich](https://dawarich.app) を 1 LXC で構築する。dawarich 公式が配布する Docker Compose 構成 (`dawarich_db` / `dawarich_redis` / `dawarich_app` / `dawarich_sidekiq` の4コンテナ) をそのまま LXC 内の Docker で動かす。[obsidian-livesync](../obsidian-livesync/README.md) と同じ「1 LXC + Docker Compose」構成。
+[services README](../README.md) で説明したクラスタ FYNSV 上に、位置情報トラッキング・分析プラットフォーム [dawarich](https://dawarich.app) を構築する。
 
-| VMID | ホスト名   | 役割                                              | TF リソース ([containers.tf](../../terraform/containers.tf)) |
-| ---- | ---------- | ------------------------------------------------- | -------------------------------------------------------------- |
-| 224  | `dawarich` | dawarich 本体 (PostGIS + Redis + Puma + Sidekiq) | `module.lxc["dawarich"]`                                        |
+- 1 LXC + Docker Compose ([obsidian-livesync](../obsidian-livesync/README.md) と同じ構成)
+- dawarich 公式配布の Compose 構成 (`dawarich_db` / `dawarich_redis` / `dawarich_app` / `dawarich_sidekiq` の4コンテナ) をそのまま使用
 
-リソース割り当て (ノード / IP / cores / RAM / rootfs / features) は [`../../terraform/`](../../terraform/) を正とする。
+VMID / ノード / IP / リソース割り当ては [`../../terraform/containers.tf`](../../terraform/containers.tf) の `module.lxc["dawarich"]` エントリが正。
 
 公開は `arona` で稼働中の `cloudflared` に Public Hostname を追加し、`dawarich.uiro.dev` → `http://192.168.2.213:3000` に向ける。スマホアプリ (Overland / GPSLogger 等) から位置情報を送信する用途が主目的のため、LAN 外からの到達性が必須。
 
@@ -225,7 +224,9 @@ SELF_HOSTED=true
 STORE_GEODATA=true
 ```
 
-`POSTGRES_PASSWORD` と `DATABASE_PASSWORD` は同じ値にする (前者は `dawarich_db` の初期化用、後者は `dawarich_app`/`dawarich_sidekiq` の接続用)。`DATABASE_HOST` / `DATABASE_USERNAME` / `DATABASE_PORT` / `REDIS_URL` は compose 側のデフォルト (`dawarich_db` / `postgres` / `5432` / `redis://dawarich_redis:6379`) で足りるため `.env` では上書きしない。環境変数の全リストは [Environment Variables](https://dawarich.app/docs/self-hosting/environment-variables) を参照。
+- `POSTGRES_PASSWORD` = `DATABASE_PASSWORD` (同じ値にする): 前者は `dawarich_db` の初期化用、後者は `dawarich_app`/`dawarich_sidekiq` の接続用
+- `DATABASE_HOST` / `DATABASE_USERNAME` / `DATABASE_PORT` / `REDIS_URL` は compose 側のデフォルト (`dawarich_db` / `postgres` / `5432` / `redis://dawarich_redis:6379`) で足りるため `.env` では上書きしない
+- 環境変数の全リストは [Environment Variables](https://dawarich.app/docs/self-hosting/environment-variables) を参照
 
 ### 2.3 起動と初回セットアップ
 

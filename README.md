@@ -16,9 +16,7 @@
 
 - ゲストのリソース定義 (VMID / ノード / vCPU / RAM / ディスク / 静的 IP / features / tags) は **`terraform/` が唯一の正**。文書側はスペックを転記せず TF のリソースアドレスを参照する
 - ゲスト内部の構築・運用 (OS 内のセットアップ、サービス設定) は `services/*/README.md`
+- ゲスト内部の共通セットアップ Tips (Tailscale 代理・sudo・systemd 自動起動・Docker 導入など、サービスを問わず使う手順) は `services/README.md`
 - クラスタ基盤 (ノード / Ceph / ストレージ、TF 管理外) は `services/README.md`
 - ネットワーク (ルーター / WAN / LAN / IPv6) は `router/`
-
-## 詳細情報
-
-実装の詳細については [CLAUDE.md](./CLAUDE.md) を参照。
+- 実装の詳細は [CLAUDE.md](./CLAUDE.md)

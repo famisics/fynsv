@@ -2,13 +2,7 @@
 
 Swarm (Foursquare) のチェックイン履歴を Google カレンダーに同期する常駐サービス。毎日 JST 0:00 に前日分を取り込み、初回はバックフィルで過去の全履歴を取り込む。
 
-新規 LXC は払い出さず、`arona` (pve02, VMID 100) 上の Docker で常駐させる ([discord-bot](../discord-bot/) / [misskey-mixi2-link](../misskey-mixi2-link/) と同じ形式)。外部公開はしない (送信のみ)。
-
-| 稼働先          | デプロイ形式                       | 配置                         |
-| --------------- | ---------------------------------- | ---------------------------- |
-| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/swarm-gcal-sync` (Taskfile で転送) |
-
-リソース割り当て (arona の cores / RAM 等) は [`../../../terraform/`](../../../terraform/) を正とする。
+配置先: `~/swarm-gcal-sync`。共通の稼働先・デプロイ形式・リソース割り当ての正・運用操作は [arona/README.md](../README.md) を参照。外部公開はしない (送信のみ)。
 
 ## 動作概要
 
@@ -18,8 +12,8 @@ Swarm (Foursquare) のチェックイン履歴を Google カレンダーに同�
 
 ## 前提
 
-- `arona` に SSH (`ssh arona`) で入れて Docker / Docker Compose v2 が使えること。
-- ローカルに Go 1.25 と [Task](https://taskfile.dev/) があること。
+共通の前提 (SSH / Docker Compose v2 / Go / Task) は [arona/README.md](../README.md) を参照。加えて:
+
 - Google Cloud プロジェクトで **Google Calendar API** を有効化し、**サービスアカウント**を作成して JSON 鍵をダウンロード済みであること (無人運用のため OAuth ではなく SA を使う。トークン失効が無い)。
 - [Foursquare 開発者ポータル](https://foursquare.com/developers/)でアプリを作成し、Redirect URI に `http://127.0.0.1:8765/callback` を登録済みであること。
 
@@ -91,11 +85,10 @@ task backfill:swarm-gcal-sync   # arona 上で docker compose run --rm sync -bac
 
 ## 運用メモ
 
+ログ確認・再起動・再デプロイは [arona/README.md](../README.md) の共通パターン (`<dir>` = `swarm-gcal-sync`, `<name>` = `swarm-gcal-sync`) を参照。加えて:
+
 | 操作 | コマンド |
 | --- | --- |
-| ログ確認 | `ssh arona "cd ~/swarm-gcal-sync && docker compose logs -f"` |
-| 再起動 | `ssh arona "cd ~/swarm-gcal-sync && docker compose restart"` |
-| 再デプロイ | `task deploy:swarm-gcal-sync` |
 | 手動で増分同期 | `ssh arona "cd ~/swarm-gcal-sync && docker compose run --rm sync -once"` |
 
 ### 障害切り分けの第一手

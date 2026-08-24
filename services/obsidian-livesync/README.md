@@ -2,23 +2,21 @@
 
 [services README](../README.md) で説明したクラスタ FYNSV 上に、Obsidian の [Self-hosted LiveSync](https://github.com/vrtmrz/obsidian-livesync) のバックエンド (CouchDB) を 1 LXC で構築する。fly.io は使わず、LXC 内の Docker で CouchDB を動かす。
 
-| VMID | ホスト名            | 役割                        | TF リソース ([containers.tf](../../terraform/containers.tf)) |
-| ---- | ------------------- | --------------------------- | ------------------------------------------------------------ |
-| 213  | `obsidian-livesync` | CouchDB 3.3 (Docker) 同期口 | `module.lxc["obsidian-livesync"]`                             |
+VMID / ノード / IP / リソース割り当ては [`../../terraform/containers.tf`](../../terraform/containers.tf) の `module.lxc["obsidian-livesync"]` エントリが正。
 
-リソース割り当て (ノード / IP / cores / RAM / rootfs / features) は [`../../terraform/`](../../terraform/) を正とする。
-
-公開は `arona` (pve01, VMID 100) で稼働中の `cloudflared` に Public Hostname を追加し、`obsidian-livesync.<your-domain>` → `http://192.168.2.206:5984` に向ける。Obsidian モバイル (iOS/Android) は HTTPS 必須なので、この経路が同期に必須。
+公開は `arona` (VMID 100) で稼働中の `cloudflared` に Public Hostname を追加し、`obsidian-livesync.<your-domain>` → `http://192.168.2.206:5984` に向ける。Obsidian モバイル (iOS/Android) は HTTPS 必須なので、この経路が同期に必須。
 
 ## 前提
 
 - 公開ホスト名を切るドメインを Cloudflare で管理しており、Cloudflare Zero Trust ダッシュボードで `arona` のトンネルに **Public Hostname** を追加できる。DNS の CNAME は Public Hostname 追加で自動生成されるため事前作業は不要
-- `root@pve03` に SSH で入れる。LXC 内部の操作は `pct enter 213` で行う (本構成は SSH 鍵を注入していない)
+- `root@pve01` に SSH で入れる。LXC 内部の操作は `pct enter 213` で行う (本構成は SSH 鍵を注入していない)
 - CouchDB の管理者ユーザ / パスワードは 1Password 管理 (本書では `obsidian` / `change-me-couchdb` をプレースホルダとする)
 
 ## 1. LXC (Terraform 管理)
 
-宣言は [`../../terraform/containers.tf`](../../terraform/containers.tf) の `local.containers` にあり、`module.lxc["obsidian-livesync"]` として払い出し済み (misskey 群の import と異なり宣言的に作成)。リソース割り当ての変更は Terraform で行う ([terraform/README.md](../../terraform/README.md))。`keyctl` を `false` のままにする理由は containers.tf のコメント参照。
+- 宣言は [`../../terraform/containers.tf`](../../terraform/containers.tf) の `local.containers` にあり、`module.lxc["obsidian-livesync"]` として払い出し済み (misskey 群の import と異なり宣言的に作成)
+- リソース割り当ての変更は Terraform で行う ([terraform/README.md](../../terraform/README.md))
+- `keyctl` を `false` のままにする理由は containers.tf のコメント参照
 
 ```sh
 cd projects/fynsv/terraform
@@ -29,7 +27,7 @@ terraform output lxc_ipv4   # {"obsidian-livesync":{"eth0":"192.168.2.206"}}
 
 ## 2. CouchDB を Docker で構築
 
-以降は pve03 から `pct enter 213` でコンテナ内で実行する。
+以降は pve01 から `pct enter 213` でコンテナ内で実行する。
 
 ### 2.1 Docker 導入
 
@@ -98,7 +96,9 @@ max_document_size = 50000000
 ```
 
 > [!IMPORTANT]
-> `[cluster] n = 1` / `q = 1` を必ず入れる。これが無いと single-node なのに複製数 `n` が既定の 3 のままで、システム DB 作成時に `Request to create N=3 DB but only 1 node(s)` で失敗する。`config` ディレクトリは CouchDB の `local.d` にマウントしており、公式イメージの entrypoint が書く `docker.ini` (admin 情報) と並んで読まれる。
+> - `[cluster] n = 1` / `q = 1` を必ず入れる
+> - 理由: 無いと single-node なのに複製数 `n` が既定の 3 のままで、システム DB 作成時に `Request to create N=3 DB but only 1 node(s)` で失敗する
+> - `config` ディレクトリは CouchDB の `local.d` にマウントしており、公式イメージの entrypoint が書く `docker.ini` (admin 情報) と並んで読まれる
 
 ### 2.3 起動とシステム DB の作成
 
@@ -113,7 +113,9 @@ for db in _users _replicator _global_changes obsidiandb; do
 done
 ```
 
-`single_node = true` を入れて起動すると `_users` / `_replicator` は自動作成される (上記ループでは `file_exists` が返る)。`_global_changes` と vault DB (`obsidiandb`) を作成する。vault DB 名は Obsidian プラグイン側の設定と一致させる。
+- `single_node = true` を入れて起動すると `_users` / `_replicator` は自動作成される (上記ループでは `file_exists` が返る)
+- 上記ループで `_global_changes` と vault DB (`obsidiandb`) を作成する
+- vault DB 名は Obsidian プラグイン側の設定と一致させる
 
 ### 2.4 検証
 
@@ -125,7 +127,7 @@ curl -sS -o /dev/null -w "%{http_code}\n" "http://127.0.0.1:5984/obsidiandb"    
 curl -sS "http://$COUCHDB_USER:$COUCHDB_PASSWORD@127.0.0.1:5984/_all_dbs"           # _global_changes,_replicator,_users,obsidiandb
 ```
 
-LAN からの到達性は pve03 ホスト等から `curl -o /dev/null -w "%{http_code}\n" http://192.168.2.206:5984/` で確認できる (認証なしなので **401** が返れば到達 OK)。
+LAN からの到達性は pve01 ホスト等から `curl -o /dev/null -w "%{http_code}\n" http://192.168.2.206:5984/` で確認できる (認証なしなので **401** が返れば到達 OK)。
 
 ## 3. cloudflared に Public Hostname を追加
 
@@ -149,7 +151,9 @@ curl -sS https://obsidian-livesync.<your-domain>/_up   # {"status":"ok"} 系 (40
 ```
 
 > [!WARNING]
-> Cloudflare 無料プランは proxied リクエストのボディ上限が **100 MB**。LiveSync はドキュメントをチャンク分割するため通常は問題ないが、巨大な添付や初回の大量同期で詰まる場合は、LiveSync のチャンクサイズを小さめにするか、初回だけ LAN (`http://192.168.2.206:5984`) で同期してから Cloudflare 経由に切り替える。
+> - Cloudflare 無料プランは proxied リクエストのボディ上限が **100 MB**
+> - LiveSync はドキュメントをチャンク分割するため通常は問題ない
+> - 巨大な添付や初回の大量同期で詰まる場合は、LiveSync のチャンクサイズを小さめにするか、初回だけ LAN (`http://192.168.2.206:5984`) で同期してから Cloudflare 経由に切り替える
 
 ## 4. Obsidian プラグイン設定
 
@@ -174,7 +178,8 @@ curl -sS https://obsidian-livesync.<your-domain>/_up   # {"status":"ok"} 系 (40
 | -------- | -------- | --------------------------------------------------------------------------------- |
 | LXC 213  | 週次     | vzdump。CouchDB データは `/opt/obsidian-livesync/data` (rootfs = `vm-pool` 16 GiB) にあり vzdump に含まれる |
 
-`vzdump 213 --storage local --mode snapshot` を cron に置くか、Datacenter > Backup でジョブを組む。端末側にも vault の実体が残るので、CouchDB は「同期のハブ」であり唯一の正本ではない。
+- `vzdump 213 --storage local --mode snapshot` を cron に置くか、Datacenter > Backup でジョブを組む
+- 端末側にも vault の実体が残るので、CouchDB は「同期のハブ」であり唯一の正本ではない
 
 ### 更新
 
@@ -198,5 +203,6 @@ CouchDB のメジャー更新時は `image: couchdb:3.x` を上げてから `doc
 ### 既知の留意点
 
 - features は `nesting=1` のみ (`keyctl` は API トークンで立てられない)。Docker は `overlay2` で動作する。
-- アクセスは pve03 からの `pct enter 213` が基本 (SSH 鍵は未注入)。
-- CouchDB の admin パスワードを変えるときは `.env` を更新して `docker compose up -d`、加えて既存 admin は `local.d/docker.ini` 経由で設定されるため、必要なら `_node/_local/_config/admins` も確認する。
+- アクセスは pve01 からの `pct enter 213` が基本 (SSH 鍵は未注入)。
+- CouchDB の admin パスワードを変えるときは `.env` を更新して `docker compose up -d` する
+- 既存 admin は `local.d/docker.ini` 経由で設定されるため、必要なら `_node/_local/_config/admins` も確認する

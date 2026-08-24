@@ -22,9 +22,7 @@ Proxmox クラスタ **FYNSV** (pve01/02/03) を [bpg/proxmox](https://registry.
 | `modules/lxc/` | LXC 払い出し用モジュール |
 | `terraform.tfvars.example` | 変数のサンプル (実値は `terraform.tfvars` に。機密のみ — ゲスト宣言は書かない) |
 
-## ガイド
-
-### 払い出し直後のベースライン投入 (自動)
+## 払い出し直後のベースライン投入 (自動)
 
 最小構成の Debian LXC には git / curl 等が入らず `LANG=C`・UTC のままになる。払い出し直後に `modules/lxc/provision.sh` が `ssh <node>` 経由の `pct exec` で自動投入する:
 
@@ -32,164 +30,14 @@ Proxmox クラスタ **FYNSV** (pve01/02/03) を [bpg/proxmox](https://registry.
 - ja_JP.UTF-8 ロケール生成・既定化 (`LANG=ja_JP.UTF-8`)
 - タイムゾーン `Asia/Tokyo`
 
-スクリプトは冪等で、コンテナの作成/再作成時に一度だけ走る (`terraform_data.provision` の `triggers_replace = [vm_id]`)。投入には apply を回すマシンが `ssh pve01/02/03` 可能であることが前提。特定コンテナで止めたい場合は `containers.tf` で `provision = false` を指定する。ロケールの反映には再ログイン (`pct enter` し直し) が要る。
+- 冪等: コンテナの作成/再作成時に一度だけ走る (`terraform_data.provision` の `triggers_replace = [vm_id]`)
+- 前提: apply を回すマシンが `ssh pve01/02/03` 可能であること
+- 無効化: 特定コンテナで止めたい場合は `containers.tf` で `provision = false` を指定
+- ロケールの反映には再ログイン (`pct enter` し直し) が要る
 
 `provision = false` のコンテナや追加ツールを入れる場合は `pct enter` 後に手動で `apt -y install <pkg>` する (初回は `apt update`)。
 
-### コンテナを Tailscale に載せる
-
-既定方針は **コンテナ内で tailscale を動かさず、`arona` (192.168.2.100) が Tailscale Service (`svc:...`) / サブネットルーターとして同一 LAN 上のコンテナを代理公開する**こと。tailnet 側の顔は arona で、コンテナへは LAN 経由で届く。コンテナに tailscaled を入れないので TUN も要らず、非特権 LXC のまま済む (例: archivebox は CT 内に tailscale を持たず arona が `svc:archivebox` を広告)。新しいサービスを tailnet に出すときはこの方式を選ぶ。
-
-#### 特定のローカル IP を service に紐付ける
-
-tailnet ポリシーで `svc:<name>` を定義したら、arona から `tailscale serve` でローカル IP:ポートを HTTPS:443 にプロキシし、同時にサービスホストとして広告する。これがそのまま admin への接続申請になる。
-
-```sh
-# arona 上 (sudo が要る)
-sudo tailscale serve --service=svc:dokploy --bg --https=443 http://192.168.2.210:3000
-```
-
-- `--service=svc:<name>`: ポリシーで定義済みのサービス名
-- `http://<lan-ip>:<port>`: 紐付けるコンテナの LAN IP と待受ポート (例: dokploy は 222 番 CT = `192.168.2.210:3000`)
-- `--bg`: バックグラウンド常駐 (再起動後も維持)。`--https=443` で TLS 終端
-- `tailscale serve` での初期化なら advertise も自動で行われるため、別途 `tailscale serve advertise` は不要
-
-実行すると `approval from an admin is required` と出て、tailnet の `AdvertiseServices` に追加される。**Tailscale 管理コンソールで arona を当該サービスのホストとして承認**すると `https://<name>.<tailnet>.ts.net/` で到達できる。
-
-確認・取り消し:
-
-```sh
-sudo tailscale serve status --json          # 現在の service → proxy 対応を確認
-tailscale debug prefs | grep -A5 AdvertiseServices   # 広告中のサービス一覧
-sudo tailscale serve --service=svc:dokploy --https=443 off   # プロキシを無効化
-tailscale serve clear svc:dokploy           # 申請ごと設定を削除
-```
-
-待受ポートが不明なときは arona から `curl -s -o /dev/null -w "%{http_code}\n" http://<lan-ip>:<port>/` で探る (UI が返れば `200`/`307` 等)。
-
-#### コンテナ内で直接 Tailscale を動かす (TUN 設定)
-
-arona 代理ではなくコンテナ自身で tailscaled を動かす場合、非特権 LXC には TUN デバイスが無いため手動で追加する。Proxmox ホスト側でコンテナの設定ファイルに 2 行追加し、コンテナを再起動する:
-
-```sh
-# Proxmox ホスト (pve0X) で実行
-cat >> /etc/pve/lxc/<vmid>.conf <<'EOF'
-lxc.cgroup2.devices.allow: c 10:200 rwm
-lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file
-EOF
-
-pct reboot <vmid>
-```
-
-再起動後、コンテナ内で `/dev/net/tun` が見えることを確認してから Tailscale をインストールする:
-
-```sh
-# コンテナ内
-ls -l /dev/net/tun              # crw-rw-rw- ... 10, 200 が出ればOK
-curl -fsSL https://tailscale.com/install.sh | sh
-tailscale up                    # 認証 URL が表示される
-```
-
-### ユーザー famisics の追加と sudo 有効化
-
-最小構成の Debian には `sudo` が入っておらず、運用は root のみになっている。一般ユーザー `famisics` を作り、sudo グループ経由で `sudo` を使えるようにする。`pct enter` で root シェルに入ってから実行する:
-
-```sh
-apt -y install sudo
-adduser famisics                 # 対話でパスワード等を設定
-usermod -aG sudo famisics        # sudo グループに追加
-```
-
-`su - famisics` で切り替えて `sudo -v` が通れば有効。パスワード入力を省きたい場合は sudoers ドロップインを置く (`/etc/sudoers.d/` 配下・`0440` 権限):
-
-```sh
-echo 'famisics ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/famisics
-chmod 0440 /etc/sudoers.d/famisics
-visudo -cf /etc/sudoers.d/famisics   # 構文チェック (壊すと sudo 全体が使えなくなる)
-```
-
-### 起動時にサーバーを自動起動する (systemd)
-
-`bun run start` のサーバーをコンテナの起動と同時に立ち上げ、落ちても復帰させる。Debian は systemd なので service unit を作る。systemd は shell の PATH を引き継がないため、`bun` は**絶対パス**で書く (`which bun` で確認。root 運用なら通常 `/root/.bun/bin/bun`)。
-
-`myapp` (サービス名)・`/root/myapp` (プロジェクトの clone 先)・`bun` のパスは実環境に合わせて差し替える:
-
-```sh
-cat > /etc/systemd/system/myapp.service <<'EOF'
-[Unit]
-Description=myapp (bun run start)
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-WorkingDirectory=/root/myapp
-ExecStart=/root/.bun/bin/bun run start
-Restart=on-failure
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-EOF
-```
-
-`enable --now` で「次回起動時に自動起動」+「今すぐ起動」を一度に行う:
-
-```sh
-systemctl daemon-reload
-systemctl enable --now myapp.service
-```
-
-### Docker をインストールする
-
-```sh
-# Remove previous versions of docker:
-sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-doc podman-docker containerd runc | cut -f1)
-
-# Add Docker's official GPG key:
-sudo apt update
-sudo apt install ca-certificates curl
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-# Add the repository to Apt sources:
-sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
-Types: deb
-URIs: https://download.docker.com/linux/debian
-Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
-Components: stable
-Architectures: $(dpkg --print-architecture)
-Signed-By: /etc/apt/keyrings/docker.asc
-EOF
-
-# Update and install:
-sudo apt update
-sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
-
-# Velify:
-docker run hello-world
-```
-
-sudo なしで `docker` を使えるようにするには、対象ユーザーを `docker` グループに追加する:
-
-```sh
-sudo usermod -aG docker "$USER"
-```
-
-グループの変更は再ログイン (または `newgrp docker`) で反映される。反映後は `sudo` なしで動作確認できる:
-
-```sh
-docker run hello-world
-```
-
-状態とログを確認する:
-
-```sh
-systemctl status myapp.service
-journalctl -u myapp.service -f
-```
-
+ゲスト内部の共通セットアップ Tips (Tailscale 代理・sudo ユーザー追加・systemd 自動起動・Docker 導入) は [`../services/README.md`](../services/README.md) を参照。
 
 ## 初期設定
 

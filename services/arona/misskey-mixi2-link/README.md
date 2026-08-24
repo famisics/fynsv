@@ -1,17 +1,9 @@
 # misskey-mixi2-link 構成 (Misskey ⇔ mixi2 投稿ブリッジ)
 
-see also [../../README.md](../../README.md) / [../misskey/README.md](../misskey/README.md)
-
-[services README](../../README.md) で説明したクラスタ FYNSV 上の Misskey ([../misskey/README.md](../misskey/README.md)) と
+[services README](../../README.md) で説明したクラスタ FYNSV 上の Misskey ([../../misskey/README.md](../../misskey/README.md)) と
 [mixi2](https://mixi.social) の間で投稿を相互コピーするブリッジ。本体は Go 製でこのディレクトリに同梱する。
 
-新規 LXC は払い出さず、`arona` (pve02, VMID 100) 上の Docker で常駐させる ([swarm-gcal-sync](../swarm-gcal-sync/) / [discord-bot](../discord-bot/) と同じ形式)。外部公開はしない (送信のみ)。
-
-| 稼働先           | デプロイ形式                                      | 配置                                  |
-| ---------------- | ------------------------------------------------- | ------------------------------------- |
-| `arona` (VM 100) | Docker (`compose.yml`, `restart: unless-stopped`) | `~/misskey-mixi2-link` (Taskfile で転送) |
-
-リソース割り当て (arona の cores / RAM 等) は [`../../../terraform/`](../../../terraform/) を正とする。
+配置先: `~/misskey-mixi2-link`。共通の稼働先・デプロイ形式・リソース割り当ての正・運用操作は [arona/README.md](../README.md) を参照。外部公開はしない (送信のみ)。
 
 ## 動作仕様
 
@@ -47,8 +39,8 @@ see also [../../README.md](../../README.md) / [../misskey/README.md](../misskey/
 
 ## 前提
 
-- `arona` に SSH (`ssh arona`) で入れて Docker / Docker Compose v2 が使えること。
-- ローカルに [Task](https://taskfile.dev/) があること (デプロイ用)。ビルド・テストを手元で回す場合は Go 1.25。
+共通の前提 (SSH / Docker Compose v2 / Go / Task) は [arona/README.md](../README.md) を参照。加えて:
+
 - Misskey に転載先の **bot アカウント**を作成済みで、API トークンを 2 本発行できること
   - 本人アカウント: ストリーミング購読・ノート読み取り用
   - bot アカウント: `write:notes` / `write:drive`
@@ -127,11 +119,7 @@ task deploy:misskey-mixi2-link   # services/arona で実行。ソース・Docker
 
 ## 運用メモ
 
-| 操作 | コマンド |
-| --- | --- |
-| ログ確認 | `ssh arona "cd ~/misskey-mixi2-link && docker compose logs -f"` |
-| 再起動 | `ssh arona "cd ~/misskey-mixi2-link && docker compose restart"` |
-| 再デプロイ | `task deploy:misskey-mixi2-link` |
+ログ確認・再起動・再デプロイは [arona/README.md](../README.md) の共通パターン (`<dir>` = `misskey-mixi2-link`, `<name>` = `misskey-mixi2-link`) を参照。
 
 ### 障害切り分けの第一手
 
