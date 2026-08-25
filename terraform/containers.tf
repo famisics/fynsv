@@ -107,6 +107,13 @@ locals {
       target_node = "pve03"
       ip_address  = "192.168.2.213/24"
     }
+
+    samba = {
+      vm_id       = 226
+      target_node = "pve01"
+      disk_size   = 50
+      ip_address  = "192.168.2.214/24"
+    }
   }
 
   container_defaults = {
