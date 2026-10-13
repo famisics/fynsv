@@ -1,15 +1,9 @@
-import react from "@vitejs/plugin-react";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
+import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 
-// 開発時は bot 側 (PORT=8091) に API と OAuth を中継する
 export default defineConfig({
-  root: "web",
-  plugins: [react()],
-  build: { outDir: "dist", emptyOutDir: true },
-  server: {
-    proxy: {
-      "/api": "http://localhost:8091",
-      "/auth": "http://localhost:8091",
-    },
-  },
+  server: { port: 3000 },
+  plugins: [tanstackStart({ srcDirectory: "src" }), nitro({ preset: "bun", plugins: ["./src/nitro/bot.ts"] }), viteReact()],
 });

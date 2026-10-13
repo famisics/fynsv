@@ -11,8 +11,8 @@ tasks:
       - task --list
 
   deploy:
-    desc: 管理画面をビルドし、arona に転送・再起動する
+    desc: ビルドし、arona に転送・再起動する
     cmds:
       - nr build
-      - COPYFILE_DISABLE=1 tar czf - --no-xattrs --no-mac-metadata package.json bun.lock Dockerfile compose.yml .env src web/dist | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && rm -rf {{.REMOTE_DIR}}/src {{.REMOTE_DIR}}/web/dist && tar xzf - -C {{.REMOTE_DIR}}"
+      - COPYFILE_DISABLE=1 tar czf - --no-xattrs --no-mac-metadata Dockerfile compose.yml .env .output | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && rm -rf {{.REMOTE_DIR}}/.output && tar xzf - -C {{.REMOTE_DIR}}"
       - ssh {{.HOST}} "cd {{.REMOTE_DIR}} && docker compose up -d --build"

@@ -12,7 +12,7 @@
 | `shared/` | 複数サービスで共通利用する Go パッケージ (`shared/<パッケージ名>/...`)。`logging` (JSON ログ), `retry` (指数バックオフ), `runutil` (シグナル待ち), `misskey` (Misskey REST/streaming クライアント) |
 
 `go.mod` / `go.sum` / `Taskfile.yaml` はこのディレクトリを Go モジュールルートとして共有する
-(`discord-bot/fun-council`, `discord-bot/uiroid`, `misskey-mixi2-link`, `swarm-gcal-sync` が対象)。`discord-bot/hub` は Go ではなく Bun (TypeScript) のプロジェクトで、独自の `package.json` と `Taskfile.yaml` を持つ。
+(`discord-bot/fun-council`, `discord-bot/uiroid`, `misskey-mixi2-link`, `swarm-gcal-sync` が対象)。`discord-bot/hub` は Go ではなく Bun (TypeScript、TanStack Start) のプロジェクトで、独自の `package.json` と `Taskfile.yaml` を持つ。
 
 ## 共通事項 (discord-bot/*, misskey-mixi2-link, swarm-gcal-sync)
 

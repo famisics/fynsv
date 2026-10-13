@@ -1,6 +1,6 @@
 # discord-bot/hub
 
-複数のサーバーに招待でき、サーバー管理者が Web 管理画面から機能を設定できる Discord bot。bot と管理画面は 1 つのプロセス (Bun) で動く。
+複数のサーバーに招待でき、サーバー管理者が Web 管理画面から機能を設定できる Discord bot。bot と管理画面は 1 つの Bun プロセスで動く。管理画面は TanStack Start (React + TypeScript) で、画面と Server Functions を同じアプリに置いている。
 
 配置先: `~/discord-bot/hub`。共通の稼働先・リソース割り当ての正・運用操作は [arona/README.md](../../README.md) を参照。
 
@@ -49,38 +49,49 @@
 | `DISCORD_CLIENT_ID` | ○ | アプリケーション ID |
 | `DISCORD_CLIENT_SECRET` | ○ | OAuth2 のクライアントシークレット |
 | `PUBLIC_URL` | ○ | 管理画面の公開 URL (末尾スラッシュなし)。`https://` なら Cookie に Secure を付ける |
-| `PORT` | | 待ち受けポート (既定 `8091`。`compose.yml` の `ports` と揃える) |
+| `PORT` | | 待ち受けポート (Nitro が読む。`compose.yml` の `ports` と揃える。ローカル開発は Vite の 3000 で、この値は使わない) |
 | `DB_PATH` | ○ | SQLite のパス (docker compose では `/data/hub.db`) |
 | `MISSKEY_ORIGIN` | ○ | Misskey の接続先 (LAN 直結ならゲストの http URL) |
 | `MISSKEY_USER_ID` | ○ | 運営アカウントのスクリーンネーム (`@` なし) |
 | `MISSKEY_USER_TOKEN` | ○ | 運営アカウントのトークン (`read:account`) |
 
-## 2. ローカルでの開発
+## 2. 構成
+
+| 場所 | 役割 |
+| --- | --- |
+| `src/routes/` | 画面と Server Routes。`/auth/*` (OAuth) と `/healthz` は Server Routes |
+| `src/server/functions/` | 画面からの読み書き (Server Functions)。入力は zod で検証し、管理権限を毎回確認する |
+| `src/server/*.server.ts` | DB・discord.js・秘密情報に触る処理。ブラウザ側に混ぜない |
+| `src/server/features/` | bot の機能 (リマインダー、ロール自動付与、参加・退出、Misskey 転送) |
+| `src/nitro/bot.ts` | サーバー起動時に bot を 1 回だけ起動する Nitro プラグイン |
+| `src/shared/` | 機能ごとの設定スキーマ。bot・Server Functions・画面が共有する |
+
+## 3. ローカルでの開発
 
 [ni](https://github.com/antfu-collective/ni) と [Bun](https://bun.sh/) が必要。
 
 ```bash
 ni                  # 依存のインストール
-nr dev              # bot + API (http://localhost:8091)
-nr dev:web          # 管理画面 (http://localhost:5173。/api と /auth は 8091 に中継)
+nr dev              # bot + 管理画面 (http://localhost:3000)
 nr typecheck        # 型チェック (出力なし)
 nr test             # テスト
+nr build            # .output にビルド
 ```
 
-ローカルでは `.env` の `PUBLIC_URL` を `http://localhost:5173` にし、Redirects に `http://localhost:5173/auth/callback` を足す。
+ローカルでは `.env` の `PUBLIC_URL` を `http://localhost:3000` にし、Redirects に `http://localhost:3000/auth/callback` を足す。
 
-## 3. デプロイ
+## 4. デプロイ
 
 ```bash
 cd services/arona/discord-bot/hub
 task deploy
 ```
 
-`nr build` で管理画面をビルドし、ソース・Dockerfile・compose.yml・`.env` を arona の `~/discord-bot/hub` に転送して `docker compose up -d --build` を実行する。DB は配置先の `./data` に置かれる。
+`nr build` でビルドし、`.output`・Dockerfile・compose.yml・`.env` を arona の `~/discord-bot/hub` に転送して `docker compose up -d --build` を実行する。DB は配置先の `./data` に置かれる。
 
 起動時に、グローバルのスラッシュコマンドを一括で登録し直す。
 
-## 4. 障害切り分け
+## 5. 障害切り分け
 
 | 症状 | 確認 |
 | --- | --- |

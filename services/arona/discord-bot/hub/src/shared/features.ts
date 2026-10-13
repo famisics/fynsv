@@ -64,3 +64,12 @@ export const profileBody = z.object({
   banner: dataUri.nullable().optional(),
 });
 export type ProfileBody = z.infer<typeof profileBody>;
+
+// ギルド一覧の 1 件。管理画面に表示する
+export type GuildSummary = {
+  id: string;
+  name: string;
+  iconUrl: string | null;
+  joined: boolean;
+  inviteUrl: string | null;
+};
