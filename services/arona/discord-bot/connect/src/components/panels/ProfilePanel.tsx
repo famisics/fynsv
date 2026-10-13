@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ProfileBody } from "../../shared/features.ts";
-import { getProfile, putProfile } from "../../client.ts";
+import { getProfile, putProfile } from "../../api.ts";
 import { useAsync } from "../../hooks.ts";
 
 // Discord に送れる画像の大きさ (base64 で 8MB 未満) に収まる元ファイルの上限

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getApp } from "../app.server.ts";
-import { requireGuildAdmin } from "../authz.server.ts";
+import { requireGuildAdmin } from "../access.server.ts";
 import { saveSettings } from "../guild-settings.server.ts";
 import { loadSettings } from "../settings.server.ts";
 import { featureNames } from "../../shared/features.ts";

@@ -1,5 +1,5 @@
 import { formatJst } from "../../shared/jst.ts";
-import { deleteReminder, getReminders } from "../../client.ts";
+import { deleteReminder, getReminders } from "../../api.ts";
 import { useAsync } from "../../hooks.ts";
 import { SettingsCard } from "./SettingsCard.tsx";
 

@@ -9,17 +9,12 @@ export function currentSession(): SessionRow | null {
   return id ? getApp().store.getSession(id, Date.now()) : null;
 }
 
-export function requireSession(): SessionRow {
-  const session = currentSession();
-  if (!session) throw new Error("unauthorized");
-  return session;
-}
-
 export type GuildAccessResult = { access: "ok"; session: SessionRow } | { access: "no_guild" | "forbidden" };
 
 // セッションの内容は信用せず、毎回 bot 側から見たメンバーの権限で判定する
 export async function checkGuildAccess(guildId: string): Promise<GuildAccessResult> {
-  const session = requireSession();
+  const session = currentSession();
+  if (!session) return { access: "forbidden" };
   const access = await getApp().gateway.checkAccess(guildId, session.userId);
   return access === "ok" ? { access, session } : { access };
 }

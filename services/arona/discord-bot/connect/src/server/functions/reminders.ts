@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getApp } from "../app.server.ts";
-import { requireGuildAdmin } from "../authz.server.ts";
+import { requireGuildAdmin } from "../access.server.ts";
 
 const guild = z.object({ guildId: z.string().min(1) });
 

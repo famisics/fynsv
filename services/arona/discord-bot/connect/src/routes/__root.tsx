@@ -1,5 +1,5 @@
 import { HeadContent, Link, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
-import { logout } from "../client.ts";
+import { logout } from "../api.ts";
 import { getMe } from "../server/functions/session.ts";
 import styles from "../styles.css?url";
 

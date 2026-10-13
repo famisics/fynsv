@@ -1,12 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getApp } from "../app.server.ts";
-import { checkGuildAccess, requireSession } from "../authz.server.ts";
+import { checkGuildAccess, currentSession } from "../access.server.ts";
 import { listGuilds } from "../guild-settings.server.ts";
 
+// 未ログインの画面でもルートの loader は走るので、例外にせず空で返す (ログイン画面はルート側で出す)
 export const getGuilds = createServerFn().handler(async () => {
+  const session = currentSession();
+  if (!session) return [];
   const { config, gateway } = getApp();
-  return listGuilds(requireSession(), config.DISCORD_CLIENT_ID, gateway);
+  return listGuilds(session, config.DISCORD_CLIENT_ID, gateway);
 });
 
 // 設定画面を開くのに必要なチャンネルとロール。bot 未参加・権限なしは例外にせず状態で返す

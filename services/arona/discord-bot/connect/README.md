@@ -59,7 +59,7 @@
 
 | 場所 | 役割 |
 | --- | --- |
-| `src/routes/` | 画面と Server Routes。`/auth/*` (OAuth) と `/healthz` は Server Routes |
+| `src/routes/` | 画面と Server Routes。`/auth/*` (OAuth) と `/health` は Server Routes |
 | `src/server/functions/` | 画面からの読み書き (Server Functions)。入力は zod で検証し、管理権限を毎回確認する |
 | `src/server/*.server.ts` | DB・discord.js・秘密情報に触る処理。ブラウザ側に混ぜない |
 | `src/server/features/` | bot の機能 (リマインダー、ロール自動付与、参加・退出、Misskey 転送) |

@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react";
 import type { FeatureConfig, FeatureName } from "../../shared/features.ts";
-import { type FeatureSettings, getSettings, putSettings } from "../../client.ts";
+import { type FeatureSettings, getSettings, putSettings } from "../../api.ts";
 
 type Props<F extends FeatureName> = {
   guildId: string;

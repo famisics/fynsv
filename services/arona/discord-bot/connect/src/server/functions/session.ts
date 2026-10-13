@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { currentSession } from "../authz.server.ts";
+import { currentSession } from "../access.server.ts";
 
 // 未ログインなら null
 export const getMe = createServerFn().handler(async () => {
