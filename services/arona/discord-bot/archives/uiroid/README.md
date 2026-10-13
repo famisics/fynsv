@@ -1,8 +1,10 @@
-# discord-bot/uiroid
+# discord-bot/archives/uiroid
+
+> アーカイブ済み。arona からは削除済みで、`Taskfile.yaml` にも deploy タスクは無い。以下は停止前の記録で、デプロイ・運用の手順は今は使えない。後継は [connect](../../connect/README.md)。
 
 本人の Misskey アカウント (`@uiroid`) 用の Discord bot。`/misskey-link` スラッシュコマンドで設定したハッシュタグ付きの本人ノートを、設定したチャンネルに転送する。
 
-配置先: `~/discord-bot/uiroid`。共通の稼働先・デプロイ形式・リソース割り当ての正・運用操作は [arona/README.md](../../README.md) を参照。外部公開はしない (Discord Gateway への outbound と Misskey Streaming API への outbound のみ)。
+配置先: `~/discord-bot/uiroid`。共通の稼働先・デプロイ形式・リソース割り当ての正・運用操作は [arona/README.md](../../../README.md) を参照。外部公開はしない (Discord Gateway への outbound と Misskey Streaming API への outbound のみ)。
 
 ## 動作仕様
 
@@ -21,7 +23,7 @@
 
 ## 前提
 
-共通の前提 (SSH / Docker Compose v2 / Go / Task) は [arona/README.md](../../README.md) を参照。加えて:
+共通の前提 (SSH / Docker Compose v2 / Go / Task) は [arona/README.md](../../../README.md) を参照。加えて:
 
 - Discord Developer Portal で Bot を作成済みで、`applications.commands` / `bot` スコープと `Send Messages` 権限を付与してサーバーに招待済みであること。
 - Misskey の本人アカウントで API トークンを発行できること (`read:account` のみで足りる)。
@@ -44,7 +46,7 @@
 ```sh
 cd ..                        # services/arona (モジュールルート)
 go build ./...               # ビルド確認
-go test ./discord-bot/uiroid/...   # フィルタ / ストアのテスト
+go test ./discord-bot/archives/uiroid/...   # フィルタ / ストアのテスト
 ```
 
 ## 3. arona へのデプロイ
@@ -67,7 +69,7 @@ task deploy:uiroid   # services/arona で実行。ソース・Dockerfile・compo
 
 ## 運用メモ
 
-ログ確認・再起動・再デプロイは [arona/README.md](../../README.md) の共通パターン (`<dir>` = `discord-bot/uiroid`, `<name>` = `uiroid`) を参照。
+ログ確認・再起動・再デプロイは [arona/README.md](../../../README.md) の共通パターン (`<dir>` = `discord-bot/uiroid`, `<name>` = `uiroid`) を参照。
 
 ### 障害切り分けの第一手
 

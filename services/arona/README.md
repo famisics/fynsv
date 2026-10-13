@@ -6,15 +6,15 @@
 
 | ディレクトリ | 役割 |
 | --- | --- |
-| [`discord-bot/`](./discord-bot/) | Discord bot (fun-council: リマインダー / ロール自動付与、uiroid: Misskey のハッシュタグ投稿を Discord に転送、[connect](./discord-bot/connect/README.md): 複数サーバー対応で Web 管理画面から設定する bot)。arona 上で Docker 常駐 |
+| [`discord-bot/`](./discord-bot/) | Discord bot。[connect](./discord-bot/connect/README.md) は複数サーバー対応で Web 管理画面から設定する bot で、arona 上で Docker 常駐。`archives/` は停止済みの旧 bot (fun-council, uiroid) |
 | [`misskey-mixi2-link/`](./misskey-mixi2-link/README.md) | Misskey ⇔ mixi2 投稿ブリッジ。arona 上で Docker 常駐 |
 | [`swarm-gcal-sync/`](./swarm-gcal-sync/README.md) | Swarm チェックイン → Google カレンダー同期。arona 上で Docker 常駐 |
 | `shared/` | 複数サービスで共通利用する Go パッケージ (`shared/<パッケージ名>/...`)。`logging` (JSON ログ), `retry` (指数バックオフ), `runutil` (シグナル待ち), `misskey` (Misskey REST/streaming クライアント) |
 
 `go.mod` / `go.sum` / `Taskfile.yaml` はこのディレクトリを Go モジュールルートとして共有する
-(`discord-bot/fun-council`, `discord-bot/uiroid`, `misskey-mixi2-link`, `swarm-gcal-sync` が対象)。`discord-bot/connect` は Go ではなく Bun (TypeScript、TanStack Start) のプロジェクトで、独自の `package.json` と `Taskfile.yaml` を持つ。
+(`discord-bot/archives/*`, `misskey-mixi2-link`, `swarm-gcal-sync` が対象)。`discord-bot/connect` は Go ではなく Bun (TypeScript、TanStack Start) のプロジェクトで、独自の `package.json` と `Taskfile.yaml` を持つ。
 
-## 共通事項 (discord-bot/*, misskey-mixi2-link, swarm-gcal-sync)
+## 共通事項 (discord-bot/connect, misskey-mixi2-link, swarm-gcal-sync)
 
 - 新規 LXC は払い出さず、`arona` (VM 100) 上の Docker で常駐させる。外部公開はしない (管理画面を持つ `discord-bot/connect` は、cloudflared 経由で管理画面だけを公開する)
 - リソース割り当て (arona の cores / RAM 等) は [`../../terraform/`](../../terraform/) を正とする

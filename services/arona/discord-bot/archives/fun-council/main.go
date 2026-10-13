@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/famisics/fynsv/services/arona/discord-bot/fun-council/features/reminder"
-	"github.com/famisics/fynsv/services/arona/discord-bot/fun-council/features/rolesync"
+	"github.com/famisics/fynsv/services/arona/discord-bot/archives/fun-council/features/reminder"
+	"github.com/famisics/fynsv/services/arona/discord-bot/archives/fun-council/features/rolesync"
 	"github.com/famisics/fynsv/services/arona/shared/logging"
 	"github.com/famisics/fynsv/services/arona/shared/runutil"
 )

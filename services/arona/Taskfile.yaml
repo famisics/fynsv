@@ -12,32 +12,6 @@ tasks:
     cmds:
       - task --list
 
-  build:fun-council:
-    internal: true
-    dir: "{{.ROOT_DIR}}"
-    cmds:
-      - GOOS={{.REMOTE_GOOS}} GOARCH={{.REMOTE_GOARCH}} CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/fun-council/bot ./discord-bot/fun-council
-
-  deploy:fun-council:
-    desc: discord-bot/fun-council をローカルでビルドし、arona に転送・再起動する
-    deps: [build:fun-council]
-    cmds:
-      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata dist/fun-council/bot discord-bot/fun-council/Dockerfile discord-bot/fun-council/compose.yml discord-bot/fun-council/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
-      - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/discord-bot/fun-council && docker compose up -d --build"
-
-  build:uiroid:
-    internal: true
-    dir: "{{.ROOT_DIR}}"
-    cmds:
-      - GOOS={{.REMOTE_GOOS}} GOARCH={{.REMOTE_GOARCH}} CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/uiroid/bot ./discord-bot/uiroid
-
-  deploy:uiroid:
-    desc: discord-bot/uiroid をローカルでビルドし、arona に転送・再起動する
-    deps: [build:uiroid]
-    cmds:
-      - COPYFILE_DISABLE=1 tar czf - -C {{.ROOT_DIR}} --no-xattrs --no-mac-metadata dist/uiroid/bot discord-bot/uiroid/Dockerfile discord-bot/uiroid/compose.yml discord-bot/uiroid/.env | ssh {{.HOST}} "mkdir -p {{.REMOTE_DIR}} && tar xzf - -C {{.REMOTE_DIR}}"
-      - ssh {{.HOST}} "cd {{.REMOTE_DIR}}/discord-bot/uiroid && docker compose up -d --build"
-
   build:discord-connect:
     desc: discord-bot/connect をビルドする (.output を生成)
     dir: "{{.ROOT_DIR}}/discord-bot/connect"
@@ -77,4 +51,4 @@ tasks:
 
   deploy:all:
     desc: 全てのサービスをローカルでビルドし、arona に転送・再起動する
-    deps: [deploy:fun-council, deploy:uiroid, deploy:misskey-mixi2-link, deploy:swarm-gcal-sync]
+    deps: [deploy:misskey-mixi2-link, deploy:swarm-gcal-sync]

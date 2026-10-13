@@ -1,8 +1,10 @@
-# discord-bot/fun-council
+# discord-bot/archives/fun-council
+
+> アーカイブ済み。arona からは削除済みで、`Taskfile.yaml` にも deploy タスクは無い。以下は停止前の記録で、デプロイ・運用の手順は今は使えない。後継は [connect](../../connect/README.md)。
 
 Discord bot。リマインダー登録 (`/remind`) とロール自動付与 (rolesync) の 2 機能を持つ。
 
-配置先: `~/discord-bot/fun-council`。共通の稼働先・デプロイ形式・リソース割り当ての正・運用操作は [arona/README.md](../../README.md) を参照。
+配置先: `~/discord-bot/fun-council`。共通の稼働先・デプロイ形式・リソース割り当ての正・運用操作は [arona/README.md](../../../README.md) を参照。
 
 ## 機能
 
@@ -11,7 +13,7 @@ Discord bot。リマインダー登録 (`/remind`) とロール自動付与 (rol
 
 ## 前提
 
-共通の前提 (SSH / Docker Compose v2 / Go / Task) は [arona/README.md](../../README.md) を参照。加えて:
+共通の前提 (SSH / Docker Compose v2 / Go / Task) は [arona/README.md](../../../README.md) を参照。加えて:
 
 - Discord Developer Portal で Bot を作成済みで、Bot Token と、対象サーバーへの招待 (Manage Roles を含む権限、rolesync 対象ロールより上位に Bot ロールを配置) が済んでいること
 
@@ -27,7 +29,7 @@ Discord bot。リマインダー登録 (`/remind`) とロール自動付与 (rol
 
 ```sh
 set -a; source .env; set +a
-go run . # services/arona/discord-bot/fun-council で実行
+go run . # services/arona/discord-bot/archives/fun-council で実行
 ```
 
 起動時にスラッシュコマンド `/remind` を登録し、不要な既存コマンドは削除する。停止 (SIGINT/SIGTERM) すると `/remind` を削除してから終了する。
@@ -40,7 +42,7 @@ task deploy:fun-council   # services/arona で実行。ソース・Dockerfile・
 
 ## 運用メモ
 
-ログ確認・再起動・再デプロイは [arona/README.md](../../README.md) の共通パターン (`<dir>` = `discord-bot/fun-council`, `<name>` = `fun-council`) を参照。
+ログ確認・再起動・再デプロイは [arona/README.md](../../../README.md) の共通パターン (`<dir>` = `discord-bot/fun-council`, `<name>` = `fun-council`) を参照。
 
 ### 障害切り分けの第一手
 
