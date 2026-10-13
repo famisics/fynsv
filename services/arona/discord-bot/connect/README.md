@@ -1,8 +1,8 @@
-# discord-bot/hub
+# discord-bot/connect
 
 複数のサーバーに招待でき、サーバー管理者が Web 管理画面から機能を設定できる Discord bot。bot と管理画面は 1 つの Bun プロセスで動く。管理画面は TanStack Start (React + TypeScript) で、画面と Server Functions を同じアプリに置いている。
 
-配置先: `~/discord-bot/hub`。共通の稼働先・リソース割り当ての正・運用操作は [arona/README.md](../../README.md) を参照。
+配置先: `~/discord-bot/connect`。共通の稼働先・リソース割り当ての正・運用操作は [arona/README.md](../../README.md) を参照。
 
 ## 機能
 
@@ -35,7 +35,7 @@
   - Bot > Privileged Gateway Intents の **Server Members Intent** を有効にする (ロール自動付与と参加・退出メッセージに必要)
   - OAuth2 > Redirects に `<PUBLIC_URL>/auth/callback` を登録する
   - OAuth2 > Client Secret を発行する
-- 管理画面を公開する Public Hostname を、arona の cloudflared に追加すること (`hub.<domain>` → `http://localhost:8091`)。設定は Cloudflare Zero Trust ダッシュボードで行う ([misskey の README](../../../misskey/README.md) と同じ方式)
+- 管理画面を公開する Public Hostname を、arona の cloudflared に追加すること (`discord-connect.<domain>` → `http://localhost:8091`)。設定は Cloudflare Zero Trust ダッシュボードで行う ([misskey の README](../../../misskey/README.md) と同じ方式)
 - Misskey の本人アカウントで API トークンを発行できること (`read:account` のみで足りる)
 - トークン類は 1Password 管理 (リポジトリ・ゲストには `.env` 以外に置かない)
 
@@ -50,7 +50,7 @@
 | `DISCORD_CLIENT_SECRET` | ○ | OAuth2 のクライアントシークレット |
 | `PUBLIC_URL` | ○ | 管理画面の公開 URL (末尾スラッシュなし)。`https://` なら Cookie に Secure を付ける |
 | `PORT` | | 待ち受けポート (Nitro が読む。`compose.yml` の `ports` と揃える。ローカル開発は Vite の 3000 で、この値は使わない) |
-| `DB_PATH` | ○ | SQLite のパス (docker compose では `/data/hub.db`) |
+| `DB_PATH` | ○ | SQLite のパス (docker compose では `/data/discord-connect.db`) |
 | `MISSKEY_ORIGIN` | ○ | Misskey の接続先 (LAN 直結ならゲストの http URL) |
 | `MISSKEY_USER_ID` | ○ | 運営アカウントのスクリーンネーム (`@` なし) |
 | `MISSKEY_USER_TOKEN` | ○ | 運営アカウントのトークン (`read:account`) |
@@ -83,11 +83,11 @@ nr build            # .output にビルド
 ## 4. デプロイ
 
 ```bash
-cd services/arona/discord-bot/hub
+cd services/arona/discord-bot/connect
 task deploy
 ```
 
-`nr build` でビルドし、`.output`・Dockerfile・compose.yml・`.env` を arona の `~/discord-bot/hub` に転送して `docker compose up -d --build` を実行する。DB は配置先の `./data` に置かれる。
+`nr build` でビルドし、`.output`・Dockerfile・compose.yml・`.env` を arona の `~/discord-bot/connect` に転送して `docker compose up -d --build` を実行する。DB は配置先の `./data` に置かれる。
 
 起動時に、グローバルのスラッシュコマンドを一括で登録し直す。
 

@@ -12,7 +12,7 @@ import { Store } from "./store.server.ts";
 export type App = { config: Config; store: Store; client: Client; gateway: Gateway };
 
 // dev の HMR でモジュールが再評価されても bot が二重に起動しないよう、globalThis に持つ
-const APP_KEY = Symbol.for("fynsv.hub.app");
+const APP_KEY = Symbol.for("fynsv.discord-connect.app");
 const globals = globalThis as { [APP_KEY]?: App };
 
 function createApp(): App {

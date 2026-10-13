@@ -2,7 +2,7 @@ version: "3"
 
 vars:
   HOST: arona
-  REMOTE_DIR: "~/discord-bot/hub"
+  REMOTE_DIR: "~/discord-bot/connect"
 
 tasks:
   default:
