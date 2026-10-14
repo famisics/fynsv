@@ -70,9 +70,12 @@ export function computeUptimeFromCounts(
   return { ratio, buckets };
 }
 
+// 連続的な色相だと 99% と 100% の見分けがつかないので、段階で色を分ける
 export function uptimeColor(ratio: number | null): string {
-  if (ratio === null) return "#3f3f46";
-  return `hsl(${ratio * 120} 65% 45%)`;
+  if (ratio === null) return "#27272a";
+  if (ratio >= 0.999) return "#22c55e";
+  if (ratio >= 0.95) return "#eab308";
+  return "#ef4444";
 }
 
 export function fmtUptime(ratio: number | null): string {

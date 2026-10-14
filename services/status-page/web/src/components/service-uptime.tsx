@@ -5,26 +5,25 @@ import { fmtUptime, uptimeColor } from "@/lib/uptime";
 import { useHistory } from "./history-provider";
 
 export function ServiceUptime({ serviceId }: { serviceId: string }) {
-  const { range, uptime, loading } = useHistory();
+  const { uptime, loading } = useHistory();
   const summary = uptime[serviceId] ?? { ratio: null, buckets: [] };
 
   return (
     <div
-      className="flex items-center gap-2 transition-opacity"
+      className="flex min-w-0 items-center gap-3 transition-opacity"
       style={{ opacity: loading ? 0.5 : 1 }}
     >
-      <span className="w-8 shrink-0 text-[11px] text-zinc-500">{range}</span>
-      <div className="flex h-5 flex-1 gap-0.5">
+      <div className="flex h-6 min-w-0 flex-1 gap-px">
         {summary.buckets.map((b) => (
           <div
             key={b.start}
-            className="flex-1 rounded-xs"
+            className="flex-1 rounded-[1px] hover:opacity-70"
             style={{ backgroundColor: uptimeColor(b.ratio) }}
             title={`${fmtTime(b.start)} – ${fmtTime(b.end)}: ${fmtUptime(b.ratio)}`}
           />
         ))}
       </div>
-      <span className="w-14 shrink-0 text-right text-[11px] tabular-nums text-zinc-400">
+      <span className="w-16 shrink-0 text-right text-xs tabular-nums text-zinc-300">
         {fmtUptime(summary.ratio)}
       </span>
     </div>
