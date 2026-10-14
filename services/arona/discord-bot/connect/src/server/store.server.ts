@@ -1,6 +1,7 @@
 import { type SQLQueryBindings, Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import type { Repeat } from "../shared/repeat.ts";
 
 export type ReminderRow = {
   id: number;
@@ -9,6 +10,7 @@ export type ReminderRow = {
   userId: string;
   message: string;
   fireAt: number;
+  repeat: Repeat | null;
 };
 
 export type SessionRow = {
@@ -28,6 +30,7 @@ type DbReminder = {
   user_id: string;
   message: string;
   fire_at: number;
+  repeat: string | null;
 };
 
 const CURSOR_KEY = "misskey_last_note_id";
@@ -52,8 +55,13 @@ export class Store {
       channel_id TEXT NOT NULL,
       user_id    TEXT NOT NULL,
       message    TEXT NOT NULL,
-      fire_at    INTEGER NOT NULL
+      fire_at    INTEGER NOT NULL,
+      repeat     TEXT
     )`);
+    // repeat 列を足す前に作られた DB には、列を後から足す
+    if (!this.many<{ name: string }>("PRAGMA table_info(reminders)").some((c) => c.name === "repeat")) {
+      this.db.exec("ALTER TABLE reminders ADD COLUMN repeat TEXT");
+    }
     this.db.exec(`CREATE TABLE IF NOT EXISTS cursors (
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -108,9 +116,9 @@ export class Store {
   addReminder(r: Omit<ReminderRow, "id">): number {
     const res = this.db
       .prepare(
-        "INSERT INTO reminders (guild_id, channel_id, user_id, message, fire_at) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO reminders (guild_id, channel_id, user_id, message, fire_at, repeat) VALUES (?, ?, ?, ?, ?, ?)",
       )
-      .run(r.guildId, r.channelId, r.userId, r.message, r.fireAt);
+      .run(r.guildId, r.channelId, r.userId, r.message, r.fireAt, r.repeat && JSON.stringify(r.repeat));
     return Number(res.lastInsertRowid);
   }
 
@@ -122,13 +130,34 @@ export class Store {
       userId: r.user_id,
       message: r.message,
       fireAt: r.fire_at,
+      repeat: r.repeat ? (JSON.parse(r.repeat) as Repeat) : null,
     };
   }
 
-  // 発火時に行を取り出して消す。削除済み (管理画面から取り消された) なら null
-  takeReminder(id: number): ReminderRow | null {
-    const row = this.one<DbReminder>("DELETE FROM reminders WHERE id = ? RETURNING *", id);
+  // 発火時に読む。削除済み (管理画面から取り消された) なら null
+  getReminder(id: number): ReminderRow | null {
+    const row = this.one<DbReminder>("SELECT * FROM reminders WHERE id = ?", id);
     return row ? this.toReminder(row) : null;
+  }
+
+  // 繰り返しの予約を、次の発火時刻に進める
+  setFireAt(id: number, fireAt: number) {
+    this.db.prepare("UPDATE reminders SET fire_at = ? WHERE id = ?").run(fireAt, id);
+  }
+
+  deleteReminderById(id: number) {
+    this.db.prepare("DELETE FROM reminders WHERE id = ?").run(id);
+  }
+
+  updateReminder(
+    id: number,
+    guildId: string,
+    fields: Pick<ReminderRow, "channelId" | "message" | "fireAt" | "repeat">,
+  ): boolean {
+    const res = this.db
+      .prepare("UPDATE reminders SET channel_id = ?, message = ?, fire_at = ?, repeat = ? WHERE id = ? AND guild_id = ?")
+      .run(fields.channelId, fields.message, fields.fireAt, fields.repeat && JSON.stringify(fields.repeat), id, guildId);
+    return res.changes > 0;
   }
 
   deleteReminder(id: number, guildId: string): boolean {

@@ -3,6 +3,9 @@ import type { ProfileBody } from "../shared/features.ts";
 
 export type GuildAccess = "ok" | "no_guild" | "forbidden";
 
+// リマインダーの送信先に対する、操作する本人と bot の送信権限
+export type SendCheck = "ok" | "unknown_channel" | "user_forbidden" | "bot_forbidden";
+
 export type BotProfile = { nick: string | null; avatarUrl: string | null };
 
 // Web API が Discord に対して行う操作。テストでは差し替える
@@ -11,6 +14,7 @@ export interface Gateway {
   checkAccess(guildId: string, userId: string): Promise<GuildAccess>;
   listChannels(guildId: string): { id: string; name: string }[];
   listRoles(guildId: string): { id: string; name: string }[];
+  checkSendable(guildId: string, channelId: string, userId: string): Promise<SendCheck>;
   canGrantRole(guildId: string, userId: string, roleId: string): Promise<boolean>;
   getProfile(guildId: string): BotProfile;
   updateProfile(guildId: string, body: ProfileBody): Promise<void>;
@@ -46,6 +50,17 @@ export function createGateway(client: Client): Gateway {
         .roles.cache.filter((r) => r.id !== guildId && !r.managed)
         .sort((a, b) => b.position - a.position)
         .map((r) => ({ id: r.id, name: r.name })),
+
+    // 他人が書き込めないチャンネルへ bot 経由で投稿できないようにする
+    async checkSendable(guildId, channelId, userId) {
+      const guild = guildOf(guildId);
+      const channel = guild.channels.cache.get(channelId);
+      if (!channel || channel.type !== ChannelType.GuildText) return "unknown_channel";
+      const member = await guild.members.fetch(userId).catch(() => null);
+      if (!member || !channel.permissionsFor(member).has(PermissionFlagsBits.SendMessages)) return "user_forbidden";
+      const me = guild.members.me;
+      return me && channel.permissionsFor(me).has(PermissionFlagsBits.SendMessages) ? "ok" : "bot_forbidden";
+    },
 
     // 自分より上位のロールや、自分が持たない権限を含むロールを、bot 経由で付与させない
     async canGrantRole(guildId, userId, roleId) {

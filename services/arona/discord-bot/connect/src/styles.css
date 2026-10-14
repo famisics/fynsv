@@ -253,6 +253,19 @@ textarea {
   color: var(--muted);
 }
 
+.reminder-form {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.reminder-form .grow {
+  flex: 1;
+  min-width: 160px;
+}
+
 fieldset {
   margin: 12px 0;
   border: 1px solid var(--border);

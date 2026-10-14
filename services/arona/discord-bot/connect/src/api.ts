@@ -1,6 +1,10 @@
-import type { FeatureConfig, FeatureName, ProfileBody } from "./shared/features.ts";
+import type { FeatureConfig, FeatureName, ProfileBody, ReminderBody } from "./shared/features.ts";
 import { getProfile as getProfileFn, putProfile as putProfileFn } from "./server/functions/profile.ts";
-import { deleteReminder as deleteReminderFn, getReminders as getRemindersFn } from "./server/functions/reminders.ts";
+import {
+  deleteReminder as deleteReminderFn,
+  getReminders as getRemindersFn,
+  putReminder as putReminderFn,
+} from "./server/functions/reminders.ts";
 import { getSettings as getSettingsFn, putSettings as putSettingsFn } from "./server/functions/settings.ts";
 
 export type FeatureSettings<F extends FeatureName> = { enabled: boolean; config: FeatureConfig<F> };
@@ -20,6 +24,12 @@ export const getReminders = (guildId: string) => getRemindersFn({ data: { guildI
 
 export async function deleteReminder(guildId: string, reminderId: number) {
   await deleteReminderFn({ data: { guildId, reminderId } });
+}
+
+// reminderId が null なら新規作成
+export async function saveReminder(guildId: string, reminderId: number | null, body: ReminderBody) {
+  const res = await putReminderFn({ data: { guildId, reminderId, body } });
+  if (!res.ok) throw new Error(res.message);
 }
 
 export const getProfile = (guildId: string) => getProfileFn({ data: { guildId } });

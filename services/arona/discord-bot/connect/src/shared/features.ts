@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { repeatSchema } from "./repeat.ts";
 
 const snowflake = z.string().regex(/^\d{17,20}$/);
 
@@ -73,3 +74,12 @@ export type GuildSummary = {
   joined: boolean;
   inviteUrl: string | null;
 };
+
+// 管理画面から作る・直すリマインダー。fireAt は epoch ms
+export const reminderBody = z.object({
+  channelId: snowflake,
+  message: z.string().trim().min(1).max(1000),
+  fireAt: z.number().int(),
+  repeat: repeatSchema.nullable(),
+});
+export type ReminderBody = z.infer<typeof reminderBody>;

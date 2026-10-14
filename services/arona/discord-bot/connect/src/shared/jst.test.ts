@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { formatJst, parseJst } from "./jst.ts";
+import { formatJst, parseJst, parseJstInput, toJstInput } from "./jst.ts";
 
 // 2026-06-24 12:00 JST
 const now = Date.UTC(2026, 5, 24, 3, 0);
@@ -51,4 +51,26 @@ describe("parseJst", () => {
 
 test("formatJst は JST の MM/DD HH:mm を返す", () => {
   expect(formatJst(jst(2026, 6, 5, 7, 8))).toBe("06/05 07:08");
+});
+
+describe("parseJstInput / toJstInput", () => {
+  test("datetime-local の値を JST として解釈する", () => {
+    expect(parseJstInput("2026-06-24T15:00")).toBe(jst(2026, 6, 24, 15, 0));
+  });
+
+  test("0 時台は JST の日付で解釈する (UTC では前日)", () => {
+    expect(parseJstInput("2026-06-25T00:30")).toBe(jst(2026, 6, 25, 0, 30));
+  });
+
+  test("存在しない日付や形式違いは null", () => {
+    expect(parseJstInput("2026-02-30T10:00")).toBeNull();
+    expect(parseJstInput("2026-06-24 10:00")).toBeNull();
+    expect(parseJstInput("")).toBeNull();
+  });
+
+  test("toJstInput は parseJstInput の逆", () => {
+    const t = jst(2026, 12, 31, 23, 59);
+    expect(toJstInput(t)).toBe("2026-12-31T23:59");
+    expect(parseJstInput(toJstInput(t))).toBe(t);
+  });
 });
