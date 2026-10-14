@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { services } from "./config";
+import { getEnabledServices, services } from "./config";
 
 function findService(id: string) {
   const s = services.find((s) => s.id === id);
@@ -8,15 +8,20 @@ function findService(id: string) {
 }
 
 describe("arona 上の docker チェック対象サービス", () => {
-  test("discord-bot は fun-council-bot-1 を docker チェックする", () => {
-    const s = findService("discord-bot");
+  test("discord-connect は discord-connect-bot-1 を docker チェックする", () => {
+    const s = findService("discord-connect");
     expect(s.enabled).toBe(true);
     expect(s.check).toEqual({
       type: "docker",
-      container: "fun-council-bot-1",
+      container: "discord-connect-bot-1",
       timeoutMs: 3000,
     });
     expect(s.proxmox).toBeUndefined();
+  });
+
+  test("廃止した discord-bot は無効で、チェック対象に含まれない", () => {
+    expect(findService("discord-bot").enabled).toBe(false);
+    expect(getEnabledServices().map((s) => s.id)).not.toContain("discord-bot");
   });
 
   test("misskey-mixi2-link は misskey-mixi2-link-bridge-1 を docker チェックする", () => {

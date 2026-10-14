@@ -41,9 +41,12 @@ export async function initDb(): Promise<void> {
 }
 
 export async function syncServiceMeta(services: Service[]): Promise<void> {
-  const meta: Record<string, { name: string; category: string }> = {};
+  const meta: Record<
+    string,
+    { name: string; category: string; enabled: boolean }
+  > = {};
   for (const s of services) {
-    meta[s.id] = { name: s.name, category: s.category };
+    meta[s.id] = { name: s.name, category: s.category, enabled: s.enabled };
   }
   const newData = JSON.stringify(meta);
 

@@ -42,7 +42,7 @@ export const getLatestSnapshot = unstable_cache(
 export const getServiceMeta = unstable_cache(
   async (): Promise<Record<
     string,
-    { name: string; category: ServiceCategory }
+    { name: string; category: ServiceCategory; enabled?: boolean }
   > | null> => {
     const db = getDb();
     const rows = await db

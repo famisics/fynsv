@@ -3,6 +3,7 @@ import {
   GlobalRangeSelector,
   HistoryProvider,
 } from "@/components/history-provider";
+import { PastServiceSection } from "@/components/past-service-section";
 import { ServiceSection } from "@/components/service-section";
 import {
   getAllServicesHistory,
@@ -44,6 +45,11 @@ export default async function Home() {
     return acc === null || c.checked_at > acc ? c.checked_at : acc;
   }, null);
   const stale = newest !== null && isStale(newest);
+
+  // 監視を止めたサービス。履歴は残っているので、一覧の下に畳んで出す
+  const pastServices = Object.entries(meta ?? {}).filter(
+    ([, m]) => m.enabled === false,
+  );
 
   const grouped = { public: [], internal: [] } as Record<
     ServiceCategory,
@@ -104,6 +110,19 @@ export default async function Home() {
               </div>
             </section>
           ),
+        )}
+
+        {pastServices.length > 0 && (
+          <details className="mb-10">
+            <summary className="cursor-pointer select-none text-xs font-medium uppercase tracking-wider text-zinc-500">
+              過去のサービス ({pastServices.length})
+            </summary>
+            <div className="mt-3 space-y-3">
+              {pastServices.map(([id, m]) => (
+                <PastServiceSection key={id} serviceId={id} name={m.name} />
+              ))}
+            </div>
+          </details>
         )}
       </HistoryProvider>
     </main>

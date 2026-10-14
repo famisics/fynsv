@@ -5,11 +5,11 @@ import { fetchResourceStats } from "./proxmox";
 describe("fetchResourceStats", () => {
   test("proxmox マッピングが無いサービスは null を返す", async () => {
     const service: Service = {
-      id: "discord-bot",
-      name: "Discord Bot",
+      id: "discord-connect",
+      name: "Discord Connect",
       category: "internal",
       enabled: true,
-      check: { type: "docker", container: "fun-council-bot-1", timeoutMs: 3000 },
+      check: { type: "docker", container: "discord-connect-bot-1", timeoutMs: 3000 },
     };
 
     const result = await fetchResourceStats(service);

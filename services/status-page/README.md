@@ -178,7 +178,7 @@ vercel --prod
 
 - health-checker の `compose.yaml` は `/var/run/docker.sock` を `:ro` マウントして `user: "0:0"` で実行する
 - `:ro` はソケットファイルの書き込みのみ制限し、Docker API 経由のあらゆる操作（コンテナ生成・exec・ホスト FS bind-mount など）は制限されない — つまり `docker.sock` アクセスは arona 上のホスト root 権限と等価。コード上は現在 GET リクエストのみ発行している
-- 監視対象の 3 コンテナ（`fun-council-bot-1`, `misskey-mixi2-link-bridge-1`, `swarm-gcal-sync-sync-1`）は Docker Compose のデフォルト命名規約（`{project}-{service}-{index}`）に従う
+- 監視対象の 3 コンテナ（`discord-connect-bot-1`, `misskey-mixi2-link-bridge-1`, `swarm-gcal-sync-sync-1`）は Docker Compose のデフォルト命名規約（`{project}-{service}-{index}`）に従う
 - compose.yaml をリネーム・再構成・複数化するとコンテナ名が変わるので `config.ts` の `container` フィールドも併せて更新する。更新しないとチェックが "no such container" エラーで "down" を報告する
 
 ### 反映
@@ -191,7 +191,7 @@ web 側の再デプロイは不要（service_meta は DB 経由で自動反映�
 
 ### 既存サービスを無効化する
 
-`config.ts` で `enabled: false` に変更する。Turso の既存データは残るので、過去の履歴は引き続き閲覧可能。
+`config.ts` で `enabled: false` に変更する。Turso の既存データは残り、web のトップページ下部の「過去のサービス」に畳んで表示される (クリックで開くと、選択中のレンジの稼働率とリソース推移を見られる)。一覧の上には出ない。
 
 ## トラブルシューティング
 

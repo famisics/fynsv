@@ -95,11 +95,11 @@ export const services: Service[] = [
     },
   },
   {
-    id: "discord-bot",
-    name: "Discord Bot",
+    id: "discord-connect",
+    name: "Discord Connect",
     category: "internal",
     enabled: true,
-    check: { type: "docker", container: "fun-council-bot-1", timeoutMs: 3000 },
+    check: { type: "docker", container: "discord-connect-bot-1", timeoutMs: 3000 },
   },
   {
     id: "swarm-gcal-sync",
@@ -135,6 +135,13 @@ export const services: Service[] = [
     enabled: true,
     check: { type: "tcp", host: "192.168.2.202", port: 8000, timeoutMs: 3000 },
     proxmox: { node: "pve03", vmid: 200, type: "lxc" },
+  },
+  {
+    id: "discord-bot",
+    name: "Discord Bot (fun-council)",
+    category: "internal",
+    enabled: false,
+    check: { type: "docker", container: "fun-council-bot-1", timeoutMs: 3000 },
   },
   {
     id: "archivebox",
