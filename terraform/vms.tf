@@ -100,7 +100,7 @@ resource "proxmox_virtual_environment_vm" "arona" {
   kvm_arguments                        = null
   mac_addresses                        = ["BC:24:11:72:61:10"]
   machine                              = null
-  migrate                              = false
+  migrate                              = true
   name                                 = "arona"
   network_device = [{
     bridge       = "vmbr0"
@@ -115,7 +115,7 @@ resource "proxmox_virtual_environment_vm" "arona" {
     trunks       = ""
     vlan_id      = 0
   }]
-  node_name           = "pve02"
+  node_name           = "pve01"
   on_boot             = true
   pool_id             = null
   protection          = false

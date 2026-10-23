@@ -32,7 +32,7 @@ Proxmox VE 3 ノードクラスタ (FYNSV) のインフラ管理リポジトリ�
 
 ## Terraform の構造
 
-- **プロバイダ**: [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox/latest/docs) (`~> 0.108`)
+- **プロバイダ**: [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox/latest/docs) (`~> 0.117`)
 - **認証**: API トークン (`terraform@pve!provider`)。値は `terraform.tfvars` に格納 (gitignore 済み)
 - **state**: ローカル (`terraform.tfstate`、gitignore 済み)
 - **LXC 定義**: `containers.tf` の `local.containers` に宣言。`local.container_defaults` でデフォルト値 (Debian 13 / 2 vCPU / 2GB RAM / 16GB disk / DHCP / nesting) を補完

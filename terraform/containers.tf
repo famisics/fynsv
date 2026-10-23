@@ -16,7 +16,7 @@ locals {
   containers = {
     supabase = {
       vm_id       = 200
-      target_node = "pve03"
+      target_node = "pve02"
       memory      = 4096
       swap        = 2048
       disk_size   = 32
@@ -25,7 +25,7 @@ locals {
 
     archivebox = {
       vm_id       = 201
-      target_node = "pve01"
+      target_node = "pve02"
       memory      = 4096
       disk_size   = 64
       firewall    = false
@@ -34,7 +34,7 @@ locals {
 
     misskey-web = {
       vm_id       = 210
-      target_node = "pve03"
+      target_node = "pve02"
       swap        = 2048
       disk_size   = 32
       firewall    = false
@@ -60,20 +60,24 @@ locals {
 
     obsidian-livesync = {
       vm_id       = 213
-      target_node = "pve01"
+      target_node = "pve02"
       ip_address  = "192.168.2.206/24"
     }
 
     coolify-cp = {
-      vm_id       = 220
-      target_node = "pve02"
-      ip_address  = "192.168.2.208/24"
+      vm_id         = 220
+      target_node   = "pve01"
+      ip_address    = "192.168.2.208/24"
+      start_on_boot = false
+      started       = false
     }
 
     coolify-app = {
-      vm_id       = 221
-      target_node = "pve02"
-      ip_address  = "192.168.2.209/24"
+      vm_id         = 221
+      target_node   = "pve01"
+      ip_address    = "192.168.2.209/24"
+      start_on_boot = false
+      started       = false
     }
 
     dokploy = {
@@ -86,31 +90,33 @@ locals {
 
     kei = {
       vm_id       = 223
-      cores       = 6
-      memory      = 4096
+      cores       = 12
+      memory      = 8192
       swap        = 4096
-      disk_size   = 48
+      disk_size   = 128
       target_node = "pve03"
       ip_address  = "192.168.2.211/24"
     }
 
     mysql = {
-      vm_id       = 214
-      target_node = "pve01"
-      memory      = 4096
-      disk_size   = 32
-      ip_address  = "192.168.2.212/24"
+      vm_id         = 214
+      target_node   = "pve01"
+      memory        = 4096
+      disk_size     = 32
+      ip_address    = "192.168.2.212/24"
+      start_on_boot = false
+      started       = false
     }
 
     dawarich = {
       vm_id       = 224
-      target_node = "pve03"
+      target_node = "pve02"
       ip_address  = "192.168.2.213/24"
     }
 
     samba = {
       vm_id       = 226
-      target_node = "pve01"
+      target_node = "pve02"
       disk_size   = 50
       ip_address  = "192.168.2.214/24"
     }

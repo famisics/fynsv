@@ -5,6 +5,9 @@ resource "proxmox_virtual_environment_container" "this" {
   started       = var.started
   start_on_boot = var.start_on_boot
   tags          = var.tags
+  # target_node を変えたときに作り直さずノード間を移す。LXC はライブマイグレーションできないので、
+  # 動いているコンテナは一度止まって移動先で起動し直す (vm-pool は共有なのでディスクのコピーはない)。
+  migrate = true
 
   cpu {
     cores = var.cores

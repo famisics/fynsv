@@ -19,9 +19,9 @@
 | ---- | ---- | ------------------- | ------ | ---------------------------------------------------------------- | ------------------------------------------------------------------- |
 | 100  | qemu | `arona`             | pve02  | [`arona/`](./arona/README.md)                                    | 公開口 (Tailscale + cloudflared)、Docker ホスト。misskey-mixi2-link / discord-bot / swarm-gcal-sync / Status Page ([`status-page/`](./status-page/README.md)) が Docker 常駐 |
 | 101  | qemu | `prana`             | pve01  | —                                                                  | 予備 (stopped)                                                       |
-| 200  | lxc  | `supabase`          | pve03  | —                                                                  | Supabase スタック (Docker)                                           |
-| 201  | lxc  | `archivebox`        | pve02  | —                                                                  | ArchiveBox (community-script 由来)                                   |
-| 210  | lxc  | `misskey-web`       | pve03  | [`misskey/`](./misskey/README.md)                                 | Misskey 本体 (Node.js)                                               |
+| 200  | lxc  | `supabase`          | pve01  | —                                                                  | Supabase スタック (Docker)                                           |
+| 201  | lxc  | `archivebox`        | pve01  | —                                                                  | ArchiveBox (community-script 由来)                                   |
+| 210  | lxc  | `misskey-web`       | pve01  | [`misskey/`](./misskey/README.md)                                 | Misskey 本体 (Node.js)                                               |
 | 211  | lxc  | `misskey-db`        | pve02  | [`misskey/`](./misskey/README.md)                                 | PostgreSQL                                                           |
 | 212  | lxc  | `misskey-redis`     | pve02  | [`misskey/`](./misskey/README.md)                                 | Redis                                                                |
 | 213  | lxc  | `obsidian-livesync` | pve01  | [`obsidian-livesync/`](./obsidian-livesync/README.md)             | CouchDB (Docker)、Obsidian LiveSync バックエンド                      |
@@ -29,8 +29,8 @@
 | 220  | lxc  | `coolify-cp`        | pve02  | [`coolify/`](./coolify/README.md)                                 | Coolify コントロールプレーン                                          |
 | 221  | lxc  | `coolify-app`       | pve02  | [`coolify/`](./coolify/README.md)                                 | Coolify アプリ実行サーバー                                            |
 | 222  | lxc  | `dokploy`           | pve01  | —                                                                  | Dokploy (PaaS、詳細未整理、stopped)                                   |
-| 223  | lxc  | `kei`               | pve03  | —                                                                  | 開発用途                                                             |
-| 224  | lxc  | `dawarich`          | pve03  | [`dawarich/`](./dawarich/README.md)                               | dawarich (位置情報トラッキング、PostGIS + Redis + Sidekiq、Docker Compose) |
+| 223  | lxc  | `kei`               | pve03  | —                                                                  | 開発用途 (pve03 を専有)                                              |
+| 224  | lxc  | `dawarich`          | pve01  | [`dawarich/`](./dawarich/README.md)                               | dawarich (位置情報トラッキング、PostGIS + Redis + Sidekiq、Docker Compose) |
 | 226  | lxc  | `samba`             | pve01  | [`samba/`](./samba/README.md)                                     | Samba (シンプルな LAN 向けファイル共有)                               |
 
 ### 公開口 arona (VM 100)
@@ -211,9 +211,9 @@ docker run hello-world
 | クラスタ名             | `FYNSV`                              |
 | Cluster Config Version | 5                                    |
 | Transport              | knet (secauth on, link_mode passive) |
-| Proxmox VE             | pve-manager/9.1.16                   |
-| Kernel                 | 6.17.9-1-pve                         |
-| ホスト OS              | Debian GNU/Linux 13 (trixie) 13.5    |
+| Proxmox VE             | pve-manager/9.2.2                    |
+| Kernel                 | 7.0.2-6-pve                          |
+| ホスト OS              | Debian GNU/Linux 13 (trixie)         |
 | ノード数               | 3                                    |
 | Quorum                 | 3/3 (Quorate, expected 3)            |
 
@@ -222,15 +222,16 @@ docker run hello-world
 | ノード | Node ID | CPU コア | RAM (maxmem) | OS ディスク (maxdisk) | vmbr0 (LAN)     | Tailscale                                | corosync `ring0_addr` |
 | ------ | ------- | -------- | ------------ | --------------------- | --------------- | ---------------------------------------- | --------------------- |
 | pve01  | 1       | 4        | 16.5 GB      | 41.5 GB               | 192.168.2.11/24 | (収集時取得せず)                         | 192.168.2.11          |
-| pve02  | 2       | 12       | 13.3 GB      | 41.5 GB               | 192.168.2.12/24 | 100.121.15.92, fd7a:115c:a1e0::c93a:f5c  | 192.168.2.12          |
-| pve03  | 3       | 12       | 13.3 GB      | 41.5 GB               | 192.168.2.13/24 | 100.94.19.105, fd7a:115c:a1e0::653a:1369 | 192.168.2.13          |
+| pve02  | 2       | 12       | 15.4 GB      | 41.5 GB               | 192.168.2.12/24 | 100.121.15.92, fd7a:115c:a1e0::c93a:f5c  | 192.168.2.12          |
+| pve03  | 3       | 12       | 15.4 GB      | 41.5 GB               | 192.168.2.13/24 | 100.94.19.105, fd7a:115c:a1e0::653a:1369 | 192.168.2.13          |
 
 各ノードの `/etc/network/interfaces` は次の構成。
 
 - `lo`, `nic0` (manual + WoL `ethtool -s nic0 wol g`)
 - `vmbr0` (static, bridge-ports `nic0`, gateway 192.168.2.1, `bridge-stp off`, `bridge-fd 0`, `ethtool -K vmbr0 rx-udp-gro-forwarding on`)
 - `nic1` (manual, 未使用)
-- pve02 / pve03 のみ `nic2` (manual, 未使用) と `wlp4s0` (DOWN) が存在
+- pve02 / pve03 のみ `nic2` (manual, 未使用) が存在
+- 無線 NIC は pve01 が `wlp1s0`、pve02 / pve03 が `wlp4s0` (いずれも DOWN)
 
 - `pvecm status` のメンバーシップは 192.168.2.11 / .12 / .13
 - `/etc/pve/corosync.conf` と各ノード `/etc/corosync/corosync.conf` の `ring0_addr` も 192.168.2.x で一致
@@ -252,16 +253,16 @@ Terraform 管理外。`vm-pool` は全 VM/LXC の生命線のため TF では触
 | Mon Map             | v2:192.168.2.{11,12,13}:3300 / v1:192.168.2.{11,12,13}:6789 |
 | Pool 数             | 4                                                           |
 | PG 数               | 97 (active+clean)                                           |
-| Raw 使用率          | 171 GiB / 2.8 TiB (5.98%)                                   |
+| Raw 使用率          | 539 GiB / 2.8 TiB (18.84%)                                  |
 
 Pool 一覧 (`ceph df`)。
 
-| Pool              | ID  | PGs | Stored  | Objects | Used    | %Used | Max Avail |
-| ----------------- | --- | --- | ------- | ------- | ------- | ----- | --------- |
-| `.mgr`            | 1   | 1   | 5.9 MiB | 3       | 18 MiB  | 0%    | 849 GiB   |
-| `vm-pool`         | 3   | 32  | 56 GiB  | 15.04k  | 168 GiB | 6.18% | 849 GiB   |
-| `cephfs_metadata` | 4   | 32  | 3.9 MiB | 23      | 12 MiB  | 0%    | 849 GiB   |
-| `cephfs_data`     | 5   | 32  | 0 B     | 0       | 0 B     | 0%    | 849 GiB   |
+| Pool              | ID  | PGs | Stored  | Used    | %Used  | Max Avail |
+| ----------------- | --- | --- | ------- | ------- | ------ | --------- |
+| `.mgr`            | 1   | 1   | 14 MiB  | 42 MiB  | 0%     | 726 GiB   |
+| `vm-pool`         | 3   | 32  | 179 GiB | 536 GiB | 19.73% | 726 GiB   |
+| `cephfs_metadata` | 4   | 32  | 4.0 MiB | 12 MiB  | 0%     | 726 GiB   |
+| `cephfs_data`     | 5   | 32  | 0 B     | 0 B     | 0%     | 726 GiB   |
 
 CephFS は `cephfs` という名前で存在 (metadata pool: `cephfs_metadata`, data pools: `cephfs_data`)。`/etc/pve/storage.cfg` には登録されていない。
 
@@ -271,6 +272,6 @@ Terraform 管理外 (`data "proxmox_datastores"` で参照のみ)。
 
 | Storage     | Type                                | Scope      | Content                     | 容量     | 用途                               |
 | ----------- | ----------------------------------- | ---------- | --------------------------- | -------- | ---------------------------------- |
-| `local`     | dir (`/var/lib/vz`)                 | node-local | iso, import, backup, vztmpl | 40.5 GiB | ISO / バックアップ / vzdump 置き場 |
-| `local-lvm` | lvmthin (vg `pve`, thinpool `data`) | node-local | rootdir, images             | 56.5 GiB | 未使用 (使用 0)                    |
-| `vm-pool`   | rbd (pool `vm-pool`, `krbd 0`)      | shared     | rootdir, images             | 949 GiB  | 全 VM / LXC のディスクが配置       |
+| `local`     | dir (`/var/lib/vz`)                 | node-local | iso, import, backup, vztmpl | 38.6 GiB | ISO / バックアップ / vzdump 置き場 |
+| `local-lvm` | lvmthin (vg `pve`, thinpool `data`) | node-local | rootdir, images             | 53.9 GiB | 未使用 (使用 0)                    |
+| `vm-pool`   | rbd (pool `vm-pool`, `krbd 0`)      | shared     | rootdir, images             | 905 GiB  | 全 VM / LXC のディスクが配置       |
